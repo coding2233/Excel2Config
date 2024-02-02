@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Excel2Config</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NPOI" Version="2.6.0" />
+  </ItemGroup>
+	
+    <ItemGroup>
+		  <!--<Content Include="Excel/**" CopyToOutputDirectory="PreserveNewest" />-->
+		  <!--<Content Include="protoc/**" CopyToOutputDirectory="PreserveNewest" />-->
+    </ItemGroup>
+	
+    <ItemGroup>
+      <None Remove="protoc\protoc-bytes.bat" />
+    </ItemGroup>
+	
+</Project>
