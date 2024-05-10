@@ -44,7 +44,7 @@ namespace Excel2Config
 				foreach (string arg in args)
 				{
 					JSONData data = null;
-					if (string.IsNullOrEmpty(arg)
+					if (!string.IsNullOrEmpty(arg)
 						&& float.TryParse(arg,out float value))
 					{
 						data = new JSONData(value);

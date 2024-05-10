@@ -42,7 +42,7 @@ namespace Excel2Config
 				foreach (string arg in args)
 				{
 					JSONData data = null;
-					if (string.IsNullOrEmpty(arg)
+					if (!string.IsNullOrEmpty(arg)
 						&& bool.TryParse(arg, out bool value))
 					{
 						data = new JSONData(value);
