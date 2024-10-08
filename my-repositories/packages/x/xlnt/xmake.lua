@@ -8,6 +8,7 @@ package("xlnt")
 
     add_versions("2023.03.02", "297b331435d6dee09bf89c8a5ad974b01f18039b")
 
+    -- 版本号 patch文件路径 sha256(sha256sum)
     add_patches("2023.03.02",path.join(os.scriptdir(), "patches", "2023.03.02", "xlnt_config.hpp.patch"),"c6bcc9eacdedeaf0b4002266dc85beee8ef6b01820add897f133e75468e1bbdd")
 
     add_configs("python", {description = "Build Arrow conversion functions", default = true, type = "boolean", readonly = true})
