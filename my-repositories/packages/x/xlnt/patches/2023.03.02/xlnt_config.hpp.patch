@@ -1,0 +1,15 @@
+diff --git a/include/xlnt/xlnt_config.hpp b/include/xlnt/xlnt_config.hpp
+index 642cd245..e798c66e 100644
+--- a/include/xlnt/xlnt_config.hpp
++++ b/include/xlnt/xlnt_config.hpp
+@@ -23,6 +23,10 @@
+ 
+ #pragma once
+ 
++#if defined(__linux__)
++#include <cstdint>
++#endif
++
+ #ifndef XLNT_API
+ #if !defined(XLNT_STATIC) && defined(_MSC_VER)
+ #ifdef XLNT_EXPORT
