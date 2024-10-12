@@ -28,7 +28,7 @@ static int show_stack_count(lua_State* L,const char* test_key)
 static int read_excel(lua_State* L)
 {
     std::string excel_path = lua_tostring(L,-1);
-    // lua_pop(L,1);
+    lua_pop(L,1);
 
     xlnt::workbook wb;
     wb.load(excel_path);
@@ -91,13 +91,48 @@ static int read_excel(lua_State* L)
     return 0;
 }
 
+static int load_excel(lua_State* L)
+{
+    xlnt::workbook wb;
+    xlnt::worksheet ws = wb.active_sheet();
+    lua_pushlightuserdata(L,&ws);
+    lua_pushlightuserdata(L,&wb);
+    return 2;
+}
+
+static int write_worksheet(lua_State* L)
+{
+    xlnt::worksheet* ws = (xlnt::worksheet* )lua_touserdata(L,-1);
+    int row = lua_tonumber(L,-2);
+    int column = lua_tonumber(L,-3);
+    std::string value = lua_tostring(L,-4);
+
+    auto cell = ws->cell(row,column);
+    cell.value(value);
+    lua_pop(4);
+    return 0;
+}
+
+static int save_excel(lua_State* L)
+{
+    xlnt::worksheet* ws = (xlnt::worksheet* )lua_touserdata(L,-1);
+    std::string excel_name = lua_tostring(L,-2);
+    wb->save(excel_name.c_str());
+    lua_pop(2);
+    return 0;
+}
+
 int main(int argc,char* args[])
 {
     lua_State* L = luaL_newstate();
     luaL_openlibs(L);
 
     lua_register(L,"test_register",test_register);
+
     lua_register(L,"read_excel",read_excel);
+    lua_register(L,"load_excel",load_excel);
+    lua_register(L,"save_excel",save_excel);
+    lua_register(L,"write_worksheet",save_excel);
 
     luaL_dofile(L,"main.lua");
     

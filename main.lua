@@ -21,3 +21,14 @@ end
 print("[end] xlnt lua")
 -- local test_reult = test_register();
 -- print(test_reult)
+
+
+
+function write_excel(excel_name)
+    local wb,wx = load_excel();
+
+    -- for 循环
+    write_worksheet(wx,1,2,"xxx")
+
+    save_excel(wb,"test.xlsx");
+end
