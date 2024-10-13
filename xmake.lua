@@ -1,4 +1,7 @@
+includes("lua-protobuf")
+
 add_requires("lua")
+
 
 add_repositories("my-repo my-repositories")
 -- add_requires("xlnt")
@@ -11,3 +14,4 @@ target("xlnt2config")
     -- add_rules("utils.symbols.export_all", {export_classes = true})
     set_languages("cxx17")
     add_packages("xlnt","lua")
+    -- add_deps("pb")
