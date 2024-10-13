@@ -109,16 +109,16 @@ static int write_worksheet(lua_State* L)
 
     auto cell = ws->cell(row,column);
     cell.value(value);
-    lua_pop(4);
+    lua_pop(L,4);
     return 0;
 }
 
 static int save_excel(lua_State* L)
 {
-    xlnt::worksheet* ws = (xlnt::worksheet* )lua_touserdata(L,-1);
+    xlnt::workbook* wb = (xlnt::workbook* )lua_touserdata(L,-1);
     std::string excel_name = lua_tostring(L,-2);
     wb->save(excel_name.c_str());
-    lua_pop(2);
+    lua_pop(L,2);
     return 0;
 }
 
