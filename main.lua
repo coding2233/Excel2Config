@@ -2,8 +2,8 @@ print("hello xlnt lua.")
 
 
 function test_require()
-    -- local pb = require("build/linux/x86_64/release/pb")
-    local pb = require("pb")
+    local pb = require("build/linux/x86_64/release/pb")
+    --local pb = require("pb")
 end
 
 local status,error = pcall(test_require)

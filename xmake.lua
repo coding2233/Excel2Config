@@ -1,4 +1,4 @@
-add_requires("lua",{system = false})
+add_requires("lua") -- {system = false}
 add_repositories("my-repo my-repositories")
 
 -- add_requires("xlnt")
