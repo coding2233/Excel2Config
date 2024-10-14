@@ -1,5 +1,14 @@
 print("hello xlnt lua.")
 
+
+function test_require()
+    -- local pb = require("build/linux/x86_64/release/pb")
+    local pb = require("pb")
+end
+
+local status,error = pcall(test_require)
+print(error)
+
 local excel = read_excel("example.xlsx")
 
 -- print(excel)
@@ -24,11 +33,12 @@ print("[end] xlnt lua")
 
 
 
-function write_excel(excel_name)
-    local wb,wx = load_excel();
+-- function write_excel(excel_name)
+--     local wb,wx = load_excel();
 
-    -- for 循环
-    write_worksheet(wx,1,2,"xxx")
+--     -- for 循环
+--     write_worksheet(wx,1,2,"xxx")
 
-    save_excel(wb,"test.xlsx");
-end
+--     save_excel(wb,"test.xlsx");
+-- end
+

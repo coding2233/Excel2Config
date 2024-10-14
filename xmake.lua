@@ -1,12 +1,13 @@
-includes("lua-protobuf")
-
-add_requires("lua")
-
-
+add_requires("lua",{system = false})
 add_repositories("my-repo my-repositories")
+
 -- add_requires("xlnt")
 add_requires("xlnt",{configs = {shared = false}})
 
+
+target("pb")
+    set_kind("shared")
+    add_files("lua-protobuf-master/pb.c")
 
 target("xlnt2config")
     -- set_kind("shared")
