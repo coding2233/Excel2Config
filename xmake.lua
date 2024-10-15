@@ -8,6 +8,7 @@ add_requires("xlnt",{configs = {shared = false}})
 target("pb")
     set_kind("shared")
     add_files("lua-protobuf-master/pb.c")
+    add_packages("lua")
 
 target("xlnt2config")
     -- set_kind("shared")

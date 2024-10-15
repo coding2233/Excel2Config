@@ -124,6 +124,12 @@ static int save_excel(lua_State* L)
 
 int main(int argc,char* args[])
 {
+    for (size_t i = 0; i < argc; i++)
+    {
+        printf("main i:%d %s\n",i,args[i]);
+    }
+    
+
     lua_State* L = luaL_newstate();
     luaL_openlibs(L);
 
