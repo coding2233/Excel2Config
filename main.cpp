@@ -10,10 +10,12 @@ extern "C"
 #include <iostream>
 #include <xlnt/xlnt.hpp>
 
-static int test_register(lua_State* L)
+static const char* global_exe_dir;
+
+static int get_exe_dir(lua_State* L)
 {
-    printf("test_register\n");
-    lua_pushstring(L,"lua_pushstring-test_register");
+    // printf("get_exe_dir:%s\n",global_exe_dir);
+    lua_pushstring(L, global_exe_dir);
     return 1;
 } 
 
@@ -122,25 +124,50 @@ static int save_excel(lua_State* L)
     return 0;
 }
 
+
+int setLuaPath( lua_State* L, const char* path )
+{
+    lua_getglobal( L, "package" );
+    lua_getfield( L, -1, "path" ); // get field "path" from table at top of stack (-1)
+    std::string cur_path = lua_tostring( L, -1 ); // grab path string from top of stack
+    cur_path.append( ";" ); // do your path magic here
+    cur_path.append( path );
+    lua_pop( L, 1 ); // get rid of the string on the stack we just pushed on line 5
+    lua_pushstring( L, cur_path.c_str() ); // push the new one
+    lua_setfield( L, -2, "path" ); // set the field "path" in table at -2 with value at top of stack
+    lua_pop( L, 1 ); // get rid of package table from top of stack
+    return 0; // all done!
+}
+
 int main(int argc,char* args[])
 {
-    for (size_t i = 0; i < argc; i++)
+    std::string exe_path = std::string(args[0]);
+    int subCount = exe_path.find_last_of('\\');
+    if (subCount <= 0)
     {
-        printf("main i:%d %s\n",i,args[i]);
+        subCount =  exe_path.find_last_of('/');
     }
-    
+    std::string exe_dir = exe_path.substr(0,subCount);
+    global_exe_dir = exe_dir.c_str();
+    std::string lua_scripts_dir = std::string(exe_dir).append("/scripts");
+    std::string lua_path = std::string(lua_scripts_dir).append("/main.lua");
+    lua_scripts_dir.append("/?.lua;");
+    // printf("path:%s\n dir:%s\n lua:%s \n\n",exe_path.c_str(),exe_dir.c_str(),lua_path.c_str());
 
     lua_State* L = luaL_newstate();
     luaL_openlibs(L);
 
-    lua_register(L,"test_register",test_register);
+    lua_register(L,"get_exe_dir",get_exe_dir);
 
     lua_register(L,"read_excel",read_excel);
     lua_register(L,"load_excel",load_excel);
     lua_register(L,"save_excel",save_excel);
     lua_register(L,"write_worksheet",save_excel);
 
-    luaL_dofile(L,"main.lua");
+
+    //设置scripts/main.lua的package环境，以及运行入口
+    setLuaPath(L,lua_scripts_dir.c_str());
+    luaL_dofile(L,lua_path.c_str());
     
 
     lua_close(L);

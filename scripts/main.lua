@@ -1,13 +1,16 @@
+require("config")
+
 print("hello xlnt lua.")
 
 
-function test_require()
-    local pb = require("pb")
-    print(pb)
-end
 
-local status,error = pcall(test_require)
-print(error)
+-- function test_require()
+--     local pb = require("pb")
+--     print(pb)
+-- end
+
+-- local status,error = pcall(test_require)
+-- print(error)
 
 local excel = read_excel("example.xlsx")
 
