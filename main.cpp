@@ -139,6 +139,21 @@ int setLuaPath( lua_State* L, const char* path )
     return 0; // all done!
 }
 
+int setArgsTab( lua_State* L, int argc,char* args[])
+{ 
+    lua_newtable(L);
+    for (size_t i = 0; i < argc; i++)
+    {
+        lua_pushnumber(L,i+1);
+        lua_pushstring(L,args[i]);
+        lua_settable(L, -3);
+    }
+    
+    lua_setglobal(L,"args");
+   
+    return 0;
+}
+
 int main(int argc,char* args[])
 {
     std::string exe_path = std::string(args[0]);
@@ -164,6 +179,8 @@ int main(int argc,char* args[])
     lua_register(L,"save_excel",save_excel);
     lua_register(L,"write_worksheet",save_excel);
 
+    //设置args全局table
+    setArgsTab(L,argc,args);
 
     //设置scripts/main.lua的package环境，以及运行入口
     setLuaPath(L,lua_scripts_dir.c_str());

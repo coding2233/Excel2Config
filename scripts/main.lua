@@ -2,7 +2,7 @@ require("config")
 
 print("hello xlnt lua.")
 
-
+local configs = parse_args()
 
 -- function test_require()
 --     local pb = require("pb")
