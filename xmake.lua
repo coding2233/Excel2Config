@@ -40,4 +40,9 @@ target("xlnt2config")
         end 
         --复制lua
         os.cp("$(projectdir)/scripts/*.lua", scripts_path)
+        local template_path = build_full_dir.."template/"
+        if not os.isdir(template_path) then 
+            os.mkdir(template_path)
+        end 
+        os.cp("$(projectdir)/template_path/*.xlsx", template_path)
     end)
