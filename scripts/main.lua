@@ -5,7 +5,10 @@ print("hello xlnt lua.")
 local configs = parse_args()
 
 for k,v in pairs(configs) do
-    print(k,v)
+    -- print(k,v)
+    if k == "help" then
+        print_help()
+    end
 end
 
 -- function test_require()

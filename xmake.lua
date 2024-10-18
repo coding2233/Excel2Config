@@ -44,5 +44,5 @@ target("xlnt2config")
         if not os.isdir(template_path) then 
             os.mkdir(template_path)
         end 
-        os.cp("$(projectdir)/template_path/*.xlsx", template_path)
+        os.cp("$(projectdir)/template/*.xlsx", template_path)
     end)

@@ -15,11 +15,9 @@ package.cpath = exe_dir.."/package/?.so;"..exe_dir.."/package/?.dylib;"..exe_dir
 --     return {"excel"=arg}
 -- end
 
-local help_text = {}
 
 local function help_cmd(cmd)
-    print("--help print this text")
-    -- print(#arg_configs)
+    return cmd
 end
 
 local function excel_cmd(cmd)
@@ -41,6 +39,27 @@ local arg_configs = {
     {key="excel", cmd={"--excel","-e"},desc="excel",callback=excel_cmd},
 }
 
+local function parse_help_text()
+    local help_text = {}
+    for i = 1, #arg_configs do
+        local arg_config = arg_configs[i]
+        local cmds = arg_config.cmd
+        local arg_text = "\t"
+        for ci = 1, #cmds do
+            arg_text=arg_text..cmds[ci]..","
+        end
+        arg_text = arg_text.."\t\t"..arg_config.desc
+        table.insert(help_text,arg_text)
+    end
+    return help_text
+end
+
+function print_help()
+    local help_text = parse_help_text()
+    for i = 1, #help_text do
+        print(help_text[i])
+    end
+end
 
 local function check_arg(arg)
     for a=1,#arg_configs do
