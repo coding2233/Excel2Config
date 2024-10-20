@@ -1,13 +1,16 @@
 require("config")
+require("parse_excel")
 
 print("hello xlnt lua.")
 
 local configs = parse_args()
 
 for k,v in pairs(configs) do
-    -- print(k,v)
-    if k == "help" then
+    -- 
+    if "help"==k then
         print_help()
+    elseif "excel"==k then
+        ParseExcel(v)
     end
 end
 

@@ -9,6 +9,9 @@ extern "C"
 
 #include <iostream>
 #include <xlnt/xlnt.hpp>
+#include "lua_system.h"
+
+namespace fs = std::filesystem;
 
 static const char* global_exe_dir;
 
@@ -178,6 +181,9 @@ int main(int argc,char* args[])
     lua_register(L,"load_excel",load_excel);
     lua_register(L,"save_excel",save_excel);
     lua_register(L,"write_worksheet",save_excel);
+
+     luaopen_systemlib(L);
+    // lua_register(L,"get_files",get_files);
 
     //设置args全局table
     setArgsTab(L,argc,args);
