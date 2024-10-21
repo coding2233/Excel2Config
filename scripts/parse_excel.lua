@@ -77,7 +77,7 @@ end
 
 local function ParsePackage(vSheet,kRow,kCell)
     parse_excel.package = vSheet[kRow][kCell+1]
-    print("ParsePackage",parse_excel.package)
+    -- print("ParsePackage",parse_excel.package)
 
     return kRow,kCell+1
 end
@@ -133,6 +133,24 @@ function ParseExcel(path)
     return parse_excel
 end
 
+local function MessageToProtobuf(message_template)
+    local string_builder = {}
+    -- local message_template = {type = type,row=kRow,cloumn = kCell, var_list = var_list}
+    -- local var_data = {type = var_type, var = var_name, desc = var_desc}
+    local type = message_template.type
+    table.insert(string_builder,string.format("message %s\n{\n",type))
+    for i=1, #message_template.var_list do
+        local message_var = message_template.var_list[i]
+        if message_var.desc ~= nil and #message_var.desc > 0 then
+            table.insert(string_builder, string.format("\t//%s\n",message_var.desc))
+        end
+        table.insert(string_builder, string.format("\t%s=%s;\n",message_var.var,tostring(i)))
+    end
+    table.insert(string_builder, "}\n\n")
+
+    return table.concat(string_builder)
+end
+
 local function EnumToProtobuf(enum_template)
     --local enum_type = {type=enum_type,desc=enmu_desc,value_list=enum_value_list}
     local string_builder = {}
@@ -152,7 +170,7 @@ local function EnumToProtobuf(enum_template)
         end
         table.insert(string_builder, string.format("\t%s=%s;\n",enum_value.var,enum_value.value))
     end
-    table.insert(string_builder, "}\n")
+    table.insert(string_builder, "}\n\n")
 
     return table.concat(string_builder)
 end
@@ -160,11 +178,12 @@ end
 function ToProtobuf(excel_template)
     -- print("ToProtobuf")
     local string_builder = {}
-    table.insert(string_builder,"syntax = \"proto3\";\n")
+    table.insert(string_builder,"syntax = \"proto3\";\n\n")
     if excel_template.package ~= nil and string.len(excel_template.package) > 0 then
-        table.insert(string_builder,string.format("package %s;\n",excel_template.package))
+        table.insert(string_builder,string.format("package %s;\n\n",excel_template.package))
     end
 
+    -- EnumToProtobuf
     for i=1,#parse_excel.enmu_list do
         local enmu_string = EnumToProtobuf(parse_excel.enmu_list[i])
         if enmu_string~=nil and string.len(enmu_string) > 0 then
@@ -172,7 +191,20 @@ function ToProtobuf(excel_template)
         end
     end
 
-    for i= 1,#string_builder do
-        print(string_builder[i])
+    -- MessageToProtobuf
+    for i=1,#parse_excel.message_template_list do
+        local message_string = MessageToProtobuf(parse_excel.message_template_list[i])
+        if message_string~=nil and string.len(message_string) > 0 then
+            table.insert(string_builder,message_string)
+        end
     end
+
+    local protobuf_string = table.concat(string_builder)
+    print(protobuf_string)
+
+end
+
+
+function ToLuaTable(excel_template)
+    
 end
