@@ -10,7 +10,8 @@ for k,v in pairs(configs) do
     if "help"==k then
         print_help()
     elseif "excel"==k then
-        ParseExcel(v)
+        local parse_excel = ParseExcel(v)
+        ToProtobuf(parse_excel)
     end
 end
 
