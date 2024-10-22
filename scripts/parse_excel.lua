@@ -93,7 +93,7 @@ local function ParseExcelCell(vSheet)
             if "#message" == cell then
                 next_row,next_cloumn = ParseMessage(vSheet,row,cloumn)
             -- 拼写错误
-            elseif "#enum" == cell or "#enmu" == cell then
+            elseif "#enum" == cell then
                 next_row,next_cloumn = ParseEnum(vSheet,row,cloumn)
             elseif "#package" == cell then
                 next_row,next_cloumn = ParsePackage(vSheet,row,cloumn)
