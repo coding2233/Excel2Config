@@ -12,6 +12,7 @@ for k,v in pairs(configs) do
     elseif "excel"==k then
         local parse_excel = ParseExcel(v)
         ToProtobuf(parse_excel)
+        ToLuaTable(parse_excel)
     end
 end
 

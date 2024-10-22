@@ -1,7 +1,8 @@
 -- require ("parse_excel_template")
 
 local parse_excel = {}
-local this = parse_excel
+
+local var_base_type_list = {"int32","string","bool","float"}
 
 local function ParseMessage(vSheet,kRow,kCell)
 
@@ -28,7 +29,7 @@ local function ParseMessage(vSheet,kRow,kCell)
         
         local var_name = vSheet[kRow+2][kCell+var_index]
         local var_desc = vSheet[kRow+3][kCell+var_index]
-        local var_data = {type = var_type, var = var_name, desc = var_desc}
+        local var_data = {type = var_type, var = var_name, desc = var_desc,row = kRow+2,cloumn = kCell+var_index}
         table.insert(var_list,var_data)
         var_index = var_index+1
     end
@@ -39,7 +40,7 @@ local function ParseMessage(vSheet,kRow,kCell)
     table.insert(parse_excel.message_template_list,message_template)
 
     -- 配置入口
-    if vSheet[kRow-1] ~= nil and vSheet[kRow-1][kCell] ~= nil and #"config" == vSheet[kRow-1][kCell] then
+    if vSheet[kRow-1] ~= nil and vSheet[kRow-1][kCell] ~= nil and "#config" == vSheet[kRow-1][kCell] then
         local config_value = vSheet[kRow-1][kCell+1]
         if config_value ~= nil then
             parse_excel.excel_config[type] = config_value
@@ -144,7 +145,14 @@ local function MessageToProtobuf(message_template)
         if message_var.desc ~= nil and #message_var.desc > 0 then
             table.insert(string_builder, string.format("\t//%s\n",message_var.desc))
         end
-        table.insert(string_builder, string.format("\t%s=%s;\n",message_var.var,tostring(i)))
+        local var_string = message_var.var
+        -- map<string,string> 
+        -- repeated int32
+        local sub_index = string.find(var_string,"#")
+        if sub_index > 1 then
+            var_string = string.sub(var_string,1,sub_index)
+        end
+        table.insert(string_builder, string.format("\t%s=%s;\n",var_string,tostring(i)))
     end
     table.insert(string_builder, "}\n\n")
 
@@ -184,16 +192,16 @@ function ToProtobuf(excel_template)
     end
 
     -- EnumToProtobuf
-    for i=1,#parse_excel.enmu_list do
-        local enmu_string = EnumToProtobuf(parse_excel.enmu_list[i])
+    for i=1,#excel_template.enmu_list do
+        local enmu_string = EnumToProtobuf(excel_template.enmu_list[i])
         if enmu_string~=nil and string.len(enmu_string) > 0 then
             table.insert(string_builder,enmu_string)
         end
     end
 
     -- MessageToProtobuf
-    for i=1,#parse_excel.message_template_list do
-        local message_string = MessageToProtobuf(parse_excel.message_template_list[i])
+    for i=1,#excel_template.message_template_list do
+        local message_string = MessageToProtobuf(excel_template.message_template_list[i])
         if message_string~=nil and string.len(message_string) > 0 then
             table.insert(string_builder,message_string)
         end
@@ -204,7 +212,174 @@ function ToProtobuf(excel_template)
 
 end
 
+local function GetMessageTemplate(excel_template,message_name)
+    for i=1,#excel_template.message_template_list do
+        local message_template = excel_template.message_template_list[i]
+        if message_name == message_template.type then
+            return message_template
+        end
+    end
+    return nil
+end
+
+
+
+function MessageTypeVarToLua(message_var,excel_template)
+    local string_builder = {}
+    local type = message_var.type
+    local var  = message_var.var
+    local row = message_var.row
+    local cloumn = message_var.cloumn
+
+    local type_name = type
+    local is_list = false
+    local i,j = string.find(type,"repeated ")
+    if j ~= nil then
+        type_name = string.sub(type,j+1)
+        is_list = true
+    end
+
+    local message_template = GetMessageTemplate(excel_template,type_name)
+    if message_template ~= nil then
+        if is_list then
+        else
+            for i=1,#message_template.var_list do
+                local message_var_string = MessageVarTemplteToLua(message_template.var_list[i],message_template,excel_template)
+                if message_var_string ~= nil and #message_var_string > 0 then
+                    table.insert(string_builder,message_var_string)
+                end
+            end
+        end
+    end
+
+    return table.concat(string_builder)
+end
+
+function MessageMapVarToLua(message_var,excel_template)
+    local string_builder = {}
+    local type = message_var.type
+    local var  = message_var.var
+    local row = message_var.row
+    local cloumn = message_var.cloumn
+    
+    if #string_builder > 0 then
+        return table.concat(string_builder)
+    else
+        -- 继续处理message type类型
+        return MessageTypeVarToLua(message_var,excel_template)
+    end
+end
+
+function MessageBaseVarToLua(message_var,excel_template)
+    local string_builder = {}
+    local type = message_var.type
+    local var  = message_var.var
+    local row = message_var.row
+    local cloumn = message_var.cloumn
+    local type_string = nil
+    local is_list = false
+    for i=1, #var_base_type_list do
+        if type == var_base_type_list[i] then
+            type_string = var_base_type_list[i]
+            break
+        else
+            local var_base_list_type = "repeated "..var_base_type_list[i]
+            if string.find(type,var_base_list_type) == 1 then
+                type_string = var_base_list_type
+                is_list = true
+                break
+            end
+        end
+    end
+
+    if type_string ~= nil then
+        local row_data = excel_template[row+2]
+        if row_data ~= nil then
+            table.insert(string_builder,string.format("%s=",var))
+            local var_value = row_data[cloumn]
+            if is_list then
+                -- todo ..  
+                -- e.g.
+                -- repeated int32#sep=,
+                local find_key = ","
+                table.insert(string_builder,"{")
+                local read_while= var_value ~= nil and string.len(var_value) > 0
+                local read_index = 1
+                while read_while do
+                    local find_index = string.find(var_value,find_key,read_index)
+                    if find_index == nil then
+                        find_index = string.len(var_value) + 1 
+                        read_while = false
+                    end
+
+                    local sub = string.sub(var_value,read_index,find_index-1)
+                    table.insert(string_builder,string.format("%s,",sub))
+                    read_index = find_index + 1
+                end
+                table.insert(string_builder,"},\n")
+            else
+                table.insert(string_builder,string.format("%s,\n",var_value))
+            end
+        end
+    end
+
+    if #string_builder > 0 then
+        return table.concat(string_builder)
+    else
+        -- 继续处理map类型
+        return MessageMapVarToLua(message_var,excel_template)
+    end
+end
+
+local function MessageVarTemplteToLua(message_var,excel_template)
+    
+    local string_builder = {}
+     -- local var_data = {type = var_type, var = var_name, desc = var_desc}
+    local type = message_var.type
+    local var  = message_var.var 
+    local row = message_var.row
+    local cloumn = message_var.cloumn
+
+    if type==nil or #type == 0 then
+        return nil
+    end
+
+
+    -- -- map只支持基础类型
+    -- if string.find(type,"map<") == 1 then
+    -- -- list
+    -- elseif string.find(type,"repeated ") == 1 then
+    -- end
+
+    -- 
+    local var_string = MessageBaseVarToLua(message_var,excel_template)
+    if var_string ~= nil and #var_string > 0 then
+        table.insert(string_builder,var_string)
+    end
+
+    return table.concat(string_builder)
+end
+
+local function ConfigToLuaTable(message_name,config_name,excel_template)
+    local string_builder = {}
+    table.insert(string_builder,string.format("local %s={\n",config_name))
+
+    local message_template = GetMessageTemplate(excel_template,message_name)
+    if message_template ~= nil then
+        for i=1,#message_template.var_list do
+            local message_var_string = MessageVarTemplteToLua(message_template.var_list[i],message_template,excel_template)
+            if message_var_string ~= nil and #message_var_string > 0 then
+                table.insert(string_builder,message_var_string)
+            end
+        end
+    end
+    table.insert(string_builder,string.format("}\n return %s\n",config_name))
+    return table.concat(string_builder)
+end
 
 function ToLuaTable(excel_template)
-    
+    for key, value in pairs(excel_template.excel_config) do
+        local lua_table = ConfigToLuaTable(key,value,excel_template)
+        print(lua_table)
+    end
 end
