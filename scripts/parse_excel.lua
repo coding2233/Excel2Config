@@ -241,15 +241,48 @@ function MessageTypeVarToLua(message_var,excel_template)
 
     local message_template = GetMessageTemplate(excel_template,type_name)
     if message_template ~= nil then
+        table.insert(string_builder,string.format("%s={",var))
         if is_list then
+            local find_row_index = 2;
+            while true do
+                local find_row_data = excel_template[row+find_row_index]
+                if find_row_data ~= nil then
+                    -- todo 检查这一行都是空数据 100太假了
+                    local is_all_nil = true
+                    for i=1,100 do
+                        if find_row_data[i]~=nil and #find_row_data[i] > 0 then
+                            is_all_nil = false
+                            break
+                        end
+                    end
+
+                    -- 空行数据
+                    if is_all_nil then
+                        break
+                    end
+                    
+                    for i=1,#message_template.var_list do
+                        local message_var_string = MessageBaseVarToLua(message_template.var_list[i],excel_template,find_row_data)
+                        if message_var_string ~= nil and #message_var_string > 0 then
+                            table.insert(string_builder,string.format("{%s},",message_var_string))
+                        end
+                    end
+                else
+                    -- 空行数据
+                    break
+                end
+                find_row_index=find_row_index+1
+            end
+            
         else
             for i=1,#message_template.var_list do
-                local message_var_string = MessageVarTemplteToLua(message_template.var_list[i],message_template,excel_template)
+                local message_var_string = MessageBaseVarToLua(message_template.var_list[i],excel_template)
                 if message_var_string ~= nil and #message_var_string > 0 then
                     table.insert(string_builder,message_var_string)
                 end
             end
         end
+        table.insert(string_builder,string.format("},\n",var))
     end
 
     return table.concat(string_builder)
@@ -262,15 +295,10 @@ function MessageMapVarToLua(message_var,excel_template)
     local row = message_var.row
     local cloumn = message_var.cloumn
     
-    if #string_builder > 0 then
-        return table.concat(string_builder)
-    else
-        -- 继续处理message type类型
-        return MessageTypeVarToLua(message_var,excel_template)
-    end
+    return table.concat(string_builder)
 end
 
-function MessageBaseVarToLua(message_var,excel_template)
+function MessageBaseVarToLua(message_var,excel_template,row_data_target)
     local string_builder = {}
     local type = message_var.type
     local var  = message_var.var
@@ -293,10 +321,18 @@ function MessageBaseVarToLua(message_var,excel_template)
     end
 
     if type_string ~= nil then
-        local row_data = excel_template[row+2]
+        local row_data = row_data_target
+        if row_data == nil then
+            row_data = excel_template[row+2]
+        end
+        
         if row_data ~= nil then
-            table.insert(string_builder,string.format("%s=",var))
             local var_value = row_data[cloumn]
+            -- 需要处理一下默认数据
+            if var_value== nil or #var==0 then
+                
+            end
+            table.insert(string_builder,string.format("%s=",var))
             if is_list then
                 -- todo ..  
                 -- e.g.
@@ -331,35 +367,6 @@ function MessageBaseVarToLua(message_var,excel_template)
     end
 end
 
-local function MessageVarTemplteToLua(message_var,excel_template)
-    
-    local string_builder = {}
-     -- local var_data = {type = var_type, var = var_name, desc = var_desc}
-    local type = message_var.type
-    local var  = message_var.var 
-    local row = message_var.row
-    local cloumn = message_var.cloumn
-
-    if type==nil or #type == 0 then
-        return nil
-    end
-
-
-    -- -- map只支持基础类型
-    -- if string.find(type,"map<") == 1 then
-    -- -- list
-    -- elseif string.find(type,"repeated ") == 1 then
-    -- end
-
-    -- 
-    local var_string = MessageBaseVarToLua(message_var,excel_template)
-    if var_string ~= nil and #var_string > 0 then
-        table.insert(string_builder,var_string)
-    end
-
-    return table.concat(string_builder)
-end
-
 local function ConfigToLuaTable(message_name,config_name,excel_template)
     local string_builder = {}
     table.insert(string_builder,string.format("local %s={\n",config_name))
@@ -367,7 +374,8 @@ local function ConfigToLuaTable(message_name,config_name,excel_template)
     local message_template = GetMessageTemplate(excel_template,message_name)
     if message_template ~= nil then
         for i=1,#message_template.var_list do
-            local message_var_string = MessageVarTemplteToLua(message_template.var_list[i],message_template,excel_template)
+            -- #config 必然只有一个#var以及#type为一个自定义MessageType
+            local message_var_string = MessageTypeVarToLua(message_template.var_list[i],excel_template)
             if message_var_string ~= nil and #message_var_string > 0 then
                 table.insert(string_builder,message_var_string)
             end
