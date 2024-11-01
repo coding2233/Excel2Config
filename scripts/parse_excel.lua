@@ -36,6 +36,7 @@ local function ParseMessage(vSheet,kRow,kCell)
 
    
     -- 消息模板
+    -- print(type,kRow,kCell,#var_list)
     local message_template = {type = type,row=kRow,cloumn = kCell, var_list = var_list}
     table.insert(parse_excel.message_template_list,message_template)
 
@@ -118,7 +119,7 @@ local function ParseExcelFile(excel_path)
 end
 
 function ParseExcel(path)
-    -- print("ParseExcel",path)
+    print("ParseExcel",path)
 
     parse_excel = {}
     parse_excel.package = nil
@@ -127,6 +128,7 @@ function ParseExcel(path)
     parse_excel.excel_config = {}
 
     local files = get_files(path)
+    print(#files,path)
     for i = 1,#files do
         ParseExcelFile(files[i])
     end
@@ -135,6 +137,7 @@ function ParseExcel(path)
 end
 
 local function MessageToProtobuf(message_template)
+    print("message_template",message_template,message_template.type,#message_template.var_list)
     local string_builder = {}
     -- local message_template = {type = type,row=kRow,cloumn = kCell, var_list = var_list}
     -- local var_data = {type = var_type, var = var_name, desc = var_desc}
@@ -149,10 +152,11 @@ local function MessageToProtobuf(message_template)
         -- map<string,string> 
         -- repeated int32
         local sub_index = string.find(var_string,"#")
-        if sub_index > 1 then
+        -- print(var_string,sub_index)
+        if sub_index ~= nil and sub_index > 1 then
             var_string = string.sub(var_string,1,sub_index)
         end
-        table.insert(string_builder, string.format("\t%s=%s;\n",var_string,tostring(i)))
+        table.insert(string_builder, string.format("\t%s %s=%s;\n",message_var.type,var_string,tostring(i)))
     end
     table.insert(string_builder, "}\n\n")
 
@@ -202,11 +206,13 @@ function ToProtobuf(excel_template)
     -- MessageToProtobuf
     for i=1,#excel_template.message_template_list do
         local message_string = MessageToProtobuf(excel_template.message_template_list[i])
-        if message_string~=nil and string.len(message_string) > 0 then
+        if message_string~=nil and #message_string > 0 then
+            print(message_string)
             table.insert(string_builder,message_string)
         end
     end
 
+    print(#string_builder)
     local protobuf_string = table.concat(string_builder)
     print(protobuf_string)
 
