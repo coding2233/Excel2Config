@@ -37,7 +37,7 @@ local function ParseMessage(vSheet,kRow,kCell)
    
     -- 消息模板
     -- print(type,kRow,kCell,#var_list)
-    local message_template = {type = type,row=kRow,cloumn = kCell, var_list = var_list}
+    local message_template = {sheet=vSheet,type = type,row=kRow,cloumn = kCell, var_list = var_list}
     table.insert(parse_excel.message_template_list,message_template)
 
     -- 配置入口
@@ -119,7 +119,7 @@ local function ParseExcelFile(excel_path)
 end
 
 function ParseExcel(path)
-    print("ParseExcel",path)
+    -- print("ParseExcel",path)
 
     parse_excel = {}
     parse_excel.package = nil
@@ -128,7 +128,7 @@ function ParseExcel(path)
     parse_excel.excel_config = {}
 
     local files = get_files(path)
-    print(#files,path)
+    -- print(#files,path)
     for i = 1,#files do
         ParseExcelFile(files[i])
     end
@@ -137,7 +137,7 @@ function ParseExcel(path)
 end
 
 local function MessageToProtobuf(message_template)
-    print("message_template",message_template,message_template.type,#message_template.var_list)
+    -- print("message_template",message_template,message_template.type,#message_template.var_list)
     local string_builder = {}
     -- local message_template = {type = type,row=kRow,cloumn = kCell, var_list = var_list}
     -- local var_data = {type = var_type, var = var_name, desc = var_desc}
@@ -207,18 +207,18 @@ function ToProtobuf(excel_template)
     for i=1,#excel_template.message_template_list do
         local message_string = MessageToProtobuf(excel_template.message_template_list[i])
         if message_string~=nil and #message_string > 0 then
-            print(message_string)
+            -- print(message_string)
             table.insert(string_builder,message_string)
         end
     end
 
-    print(#string_builder)
+    -- print(#string_builder)
     local protobuf_string = table.concat(string_builder)
     print(protobuf_string)
 
 end
 
-local function GetMessageTemplate(excel_template,message_name)
+function GetMessageTemplate(excel_template,message_name)
     for i=1,#excel_template.message_template_list do
         local message_template = excel_template.message_template_list[i]
         if message_name == message_template.type then
@@ -246,12 +246,20 @@ function MessageTypeVarToLua(message_var,excel_template)
     end
 
     local message_template = GetMessageTemplate(excel_template,type_name)
+    -- print("MessageTypeVarToLua",type,type_name,is_list,var,message_template)
+
     if message_template ~= nil then
+        -- for key, value in pairs(message_template) do
+        --     print(key,value)
+        -- end
+        local find_message_template_row = message_template.row
+        -- print( message_template.row,message_template.cloumn, message_template.type,message_template.sheet)
         table.insert(string_builder,string.format("%s={",var))
         if is_list then
-            local find_row_index = 2;
+            local find_row_index = 4;
             while true do
-                local find_row_data = excel_template[row+find_row_index]
+                local find_row_data = message_template.sheet[find_message_template_row+find_row_index]
+                -- print(find_message_template_row,find_row_index,find_row_data)
                 if find_row_data ~= nil then
                     -- todo 检查这一行都是空数据 100太假了
                     local is_all_nil = true
@@ -266,7 +274,7 @@ function MessageTypeVarToLua(message_var,excel_template)
                     if is_all_nil then
                         break
                     end
-                    
+                    -- print(#message_template.var_list)
                     for i=1,#message_template.var_list do
                         local message_var_string = MessageBaseVarToLua(message_template.var_list[i],excel_template,find_row_data)
                         if message_var_string ~= nil and #message_var_string > 0 then
@@ -281,14 +289,16 @@ function MessageTypeVarToLua(message_var,excel_template)
             end
             
         else
+            local find_row_data = message_template.sheet[find_message_template_row+4]
+
             for i=1,#message_template.var_list do
-                local message_var_string = MessageBaseVarToLua(message_template.var_list[i],excel_template)
+                local message_var_string = MessageBaseVarToLua(message_template.var_list[i],excel_template,find_row_data)
                 if message_var_string ~= nil and #message_var_string > 0 then
                     table.insert(string_builder,message_var_string)
                 end
             end
         end
-        table.insert(string_builder,string.format("},\n",var))
+        table.insert(string_builder,string.format("},",var))
     end
 
     return table.concat(string_builder)
@@ -312,6 +322,8 @@ function MessageBaseVarToLua(message_var,excel_template,row_data_target)
     local cloumn = message_var.cloumn
     local type_string = nil
     local is_list = false
+    local type_is_string = false
+    local type_is_bool = false
     for i=1, #var_base_type_list do
         if type == var_base_type_list[i] then
             type_string = var_base_type_list[i]
@@ -327,6 +339,13 @@ function MessageBaseVarToLua(message_var,excel_template,row_data_target)
     end
 
     if type_string ~= nil then
+        -- print(type_string)
+        local find_type_is_string = string.find(type_string,"string")
+        type_is_string = find_type_is_string ~= nil and find_type_is_string >0
+
+        local find_type_is_bool = string.find(type_string,"bool")
+        type_is_bool = find_type_is_bool ~= nil and find_type_is_bool > 0
+
         local row_data = row_data_target
         if row_data == nil then
             row_data = excel_template[row+2]
@@ -358,9 +377,16 @@ function MessageBaseVarToLua(message_var,excel_template,row_data_target)
                     table.insert(string_builder,string.format("%s,",sub))
                     read_index = find_index + 1
                 end
-                table.insert(string_builder,"},\n")
+                table.insert(string_builder,"},")
             else
-                table.insert(string_builder,string.format("%s,\n",var_value))
+                local var_vale_format = "%s,"
+                if type_is_string then
+                    var_vale_format = "\"%s\","
+                end
+                if type_is_bool then
+                    var_value = string.lower(var_value)
+                end
+                table.insert(string_builder,string.format(var_vale_format,var_value))
             end
         end
     end
