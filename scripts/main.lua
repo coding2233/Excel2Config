@@ -1,5 +1,6 @@
 require("config")
 require("parse_excel")
+require("excel_to_protobuf")
 
 print("hello xlnt lua.")
 
@@ -11,8 +12,13 @@ for k,v in pairs(configs) do
         print_help()
     elseif "excel"==k then
         local parse_excel = ParseExcel(v)
-        ToProtobuf(parse_excel)
-        ToLuaTable(parse_excel)
+        local proto = ToProtobuf(parse_excel)
+        local proto_data_table = ToLuaTable(parse_excel)
+        for key, value in pairs(proto_data_table) do
+            print("protobuf_encode",key)
+            protobuf_encode(proto,key,value)
+        end
+        
     end
 end
 

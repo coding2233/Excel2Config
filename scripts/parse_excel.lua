@@ -215,7 +215,7 @@ function ToProtobuf(excel_template)
     -- print(#string_builder)
     local protobuf_string = table.concat(string_builder)
     print(protobuf_string)
-
+    return protobuf_string
 end
 
 function GetMessageTemplate(excel_template,message_name)
@@ -462,8 +462,11 @@ function MessageVarToLua(message_var,excel_template,row_data_target)
 end
 
 function ToLuaTable(excel_template)
+    local data_table = {}
     for key, value in pairs(excel_template.excel_config) do
         local lua_table = ConfigToLuaTable(key,value,excel_template)
+        data_table[key] = lua_table
         print(lua_table)
     end
+    return data_table
 end
