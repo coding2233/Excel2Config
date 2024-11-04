@@ -304,13 +304,24 @@ function MessageTypeVarToLua(message_var,excel_template)
     return table.concat(string_builder)
 end
 
-function MessageMapVarToLua(message_var,excel_template)
+function MessageMapVarToLua(message_var,excel_template,row_data_target)
     local string_builder = {}
     local type = message_var.type
     local var  = message_var.var
     local row = message_var.row
     local cloumn = message_var.cloumn
     
+    local var_value = row_data_target[cloumn]
+    if var_value == nil then
+        var_value = ""
+    end
+
+    table.insert(string_builder,"{")
+    for k, v in string.gmatch(var_value, "(%w+):(%w+)") do
+        table.insert(string_builder,string.format("%s=%s,",k,v))
+    end
+    table.insert(string_builder,"},")
+
     return table.concat(string_builder)
 end
 
@@ -355,7 +366,15 @@ function MessageBaseVarToLua(message_var,excel_template,row_data_target)
             local var_value = row_data[cloumn]
             -- 需要处理一下默认数据
             if var_value== nil or #var==0 then
-                
+                if not is_list then
+                    if type_is_string then
+                        var_value = ""
+                    elseif type_is_bool then
+                        var_value = false
+                    else
+                        var_value = 0
+                    end
+                end
             end
             table.insert(string_builder,string.format("%s=",var))
             if is_list then
@@ -395,7 +414,7 @@ function MessageBaseVarToLua(message_var,excel_template,row_data_target)
         return table.concat(string_builder)
     else
         -- 继续处理map类型
-        return MessageMapVarToLua(message_var,excel_template)
+        return MessageMapVarToLua(message_var,excel_template,row_data)
     end
 end
 
