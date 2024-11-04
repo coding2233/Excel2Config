@@ -276,7 +276,7 @@ function MessageTypeVarToLua(message_var,excel_template)
                     end
                     -- print(#message_template.var_list)
                     for i=1,#message_template.var_list do
-                        local message_var_string = MessageBaseVarToLua(message_template.var_list[i],excel_template,find_row_data)
+                        local message_var_string = MessageVarToLua(message_template.var_list[i],excel_template,find_row_data)
                         if message_var_string ~= nil and #message_var_string > 0 then
                             table.insert(string_builder,string.format("{%s},",message_var_string))
                         end
@@ -292,7 +292,7 @@ function MessageTypeVarToLua(message_var,excel_template)
             local find_row_data = message_template.sheet[find_message_template_row+4]
 
             for i=1,#message_template.var_list do
-                local message_var_string = MessageBaseVarToLua(message_template.var_list[i],excel_template,find_row_data)
+                local message_var_string = MessageVarToLua(message_template.var_list[i],excel_template,find_row_data)
                 if message_var_string ~= nil and #message_var_string > 0 then
                     table.insert(string_builder,message_var_string)
                 end
@@ -426,7 +426,7 @@ local function ConfigToLuaTable(message_name,config_name,excel_template)
     if message_template ~= nil then
         for i=1,#message_template.var_list do
             -- #config 必然只有一个#var以及#type为一个自定义MessageType
-            local message_var_string = MessageTypeVarToLua(message_template.var_list[i],excel_template)
+            local message_var_string = MessageVarToLua(message_template.var_list[i],excel_template)
             if message_var_string ~= nil and #message_var_string > 0 then
                 table.insert(string_builder,message_var_string)
             end
@@ -434,6 +434,31 @@ local function ConfigToLuaTable(message_name,config_name,excel_template)
     end
     table.insert(string_builder,string.format("}\n return %s\n",config_name))
     return table.concat(string_builder)
+end
+
+function MessageVarToLua(message_var,excel_template,row_data_target)
+    local type = message_var.type
+    local type_is_base = false
+    for i=1, #var_base_type_list do
+        if type == var_base_type_list[i] then
+            type_is_base = true
+            break
+        else
+            local var_base_list_type = "repeated "..var_base_type_list[i]
+            if string.find(type,var_base_list_type) == 1 then
+                type_is_base = true
+                break
+            end
+        end
+    end
+
+    local message_var_string = nil
+    if type_is_base then
+        message_var_string = MessageBaseVarToLua(message_var,excel_template,row_data_target)
+    else
+        message_var_string = MessageTypeVarToLua(message_var,excel_template)
+    end
+    return message_var_string
 end
 
 function ToLuaTable(excel_template)
