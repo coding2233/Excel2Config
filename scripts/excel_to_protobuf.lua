@@ -41,6 +41,8 @@ function ProtobufExcelEncode(proto,proto_name,data_table)
     local bytes = assert(pb.encode(proto_name,data_table))
     print("protobuf_encode pb.encode",bytes)
     print(pb.tohex(bytes))
+
+    return bytes
 end
 
 
