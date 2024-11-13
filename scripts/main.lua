@@ -16,7 +16,13 @@ for k,v in pairs(configs) do
         local proto_data_table = ToLuaTable(parse_excel)
         for key, value in pairs(proto_data_table) do
             print("protobuf_encode",key)
-            ProtobufExcelEncode(proto,key,value)
+            local data_path = get_exe_dir().."/package/data_temp.lua"
+            local data_file = io.open(data_path,"w")
+            data_file:write(value)
+            data_file:close()
+
+            local data_table = require("data_temp")
+            ProtobufExcelEncode(proto,key,data_table)
             -- PBTest()
         end
         

@@ -197,11 +197,11 @@ local function EnumToProtobuf(enum_template)
     return table.concat(string_builder)
 end
 
-function ToProtobuf(excel_template)
+function ToProtobuf(excel_template,show_package)
     -- print("ToProtobuf")
     local string_builder = {}
     table.insert(string_builder,"syntax = \"proto3\";\n\n")
-    if excel_template.package ~= nil and string.len(excel_template.package) > 0 then
+    if show_package ~= nil and excel_template.package ~= nil and string.len(excel_template.package) > 0 then
         table.insert(string_builder,string.format("package %s;\n\n",excel_template.package))
     end
 
@@ -284,13 +284,15 @@ function MessageTypeVarToLua(message_var,excel_template)
                     if is_all_nil then
                         break
                     end
+                    table.insert(string_builder,"{")
                     -- print(#message_template.var_list)
                     for i=1,#message_template.var_list do
                         local message_var_string = MessageVarToLua(message_template.var_list[i],excel_template,find_row_data)
                         if message_var_string ~= nil and #message_var_string > 0 then
-                            table.insert(string_builder,string.format("{%s},",message_var_string))
+                            table.insert(string_builder,string.format("%s,",message_var_string))
                         end
                     end
+                    table.insert(string_builder,"},")
                 else
                     -- 空行数据
                     break
@@ -405,7 +407,16 @@ function MessageBaseVarToLua(message_var,excel_template,row_data_target)
                     end
 
                     local sub = string.sub(var_value,read_index,find_index-1)
-                    table.insert(string_builder,string.format("%s,",sub))
+
+                    local var_vale_format = "%s,"
+                    if type_is_string then
+                        var_vale_format = "\"%s\","
+                    end
+                    if type_is_bool then
+                        sub = string.lower(sub)
+                    end
+
+                    table.insert(string_builder,string.format(var_vale_format,sub))
                     read_index = find_index + 1
                 end
                 table.insert(string_builder,"},")
