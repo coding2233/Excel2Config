@@ -149,14 +149,15 @@ local function MessageToProtobuf(message_template)
             table.insert(string_builder, string.format("\t//%s\n",message_var.desc))
         end
         local var_string = message_var.var
+        local var_type_string = message_var.type
         -- map<string,string> 
         -- repeated int32
-        local sub_index = string.find(var_string,"#")
-        -- print(var_string,sub_index)
+        local sub_index = string.find(var_type_string,"#")
+        -- print("--------",var_type_string,sub_index)
         if sub_index ~= nil and sub_index > 1 then
-            var_string = string.sub(var_string,1,sub_index)
+            var_type_string = string.sub(var_type_string,1,sub_index-1)
         end
-        table.insert(string_builder, string.format("\t%s %s=%s;\n",message_var.type,var_string,tostring(i)))
+        table.insert(string_builder, string.format("\t%s %s = %s;\n",var_type_string,var_string,tostring(i)))
     end
     table.insert(string_builder, "}\n\n")
 
@@ -466,7 +467,7 @@ function ToLuaTable(excel_template)
     for key, value in pairs(excel_template.excel_config) do
         local lua_table = ConfigToLuaTable(key,value,excel_template)
         data_table[key] = lua_table
-        print(lua_table)
+        -- print(lua_table)
     end
     return data_table
 end

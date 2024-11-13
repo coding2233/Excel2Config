@@ -16,7 +16,8 @@ for k,v in pairs(configs) do
         local proto_data_table = ToLuaTable(parse_excel)
         for key, value in pairs(proto_data_table) do
             print("protobuf_encode",key)
-            protobuf_encode(proto,key,value)
+            -- ProtobufExcelEncode(proto,key,value)
+            PBTest()
         end
         
     end
