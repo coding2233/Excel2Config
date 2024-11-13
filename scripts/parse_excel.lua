@@ -4,6 +4,15 @@ local parse_excel = {}
 
 local var_base_type_list = {"int32","string","bool","float"}
 
+local function TableConcatEx(table_data)
+    local string_builder_result = table.concat(table_data)
+    local i,result_j = string.find(string_builder_result,",",-1)
+    if result_j == #string_builder_result then
+        string_builder_result = string.sub(string_builder_result,1,result_j-1)
+    end
+    return string_builder_result
+end
+
 local function ParseMessage(vSheet,kRow,kCell)
 
     --检查
@@ -302,8 +311,10 @@ function MessageTypeVarToLua(message_var,excel_template)
         table.insert(string_builder,string.format("},",var))
     end
 
-    return table.concat(string_builder)
+    return TableConcatEx(string_builder)
 end
+
+
 
 function MessageMapVarToLua(message_var,excel_template,row_data_target)
     local string_builder = {}
@@ -323,7 +334,7 @@ function MessageMapVarToLua(message_var,excel_template,row_data_target)
     end
     table.insert(string_builder,"},")
 
-    return table.concat(string_builder)
+    return TableConcatEx(string_builder)
 end
 
 function MessageBaseVarToLua(message_var,excel_template,row_data_target)
@@ -412,7 +423,7 @@ function MessageBaseVarToLua(message_var,excel_template,row_data_target)
     end
 
     if #string_builder > 0 then
-        return table.concat(string_builder)
+        return TableConcatEx(string_builder)
     else
         -- 继续处理map类型
         return MessageMapVarToLua(message_var,excel_template,row_data)
@@ -467,7 +478,7 @@ function ToLuaTable(excel_template)
     for key, value in pairs(excel_template.excel_config) do
         local lua_table = ConfigToLuaTable(key,value,excel_template)
         data_table[key] = lua_table
-        -- print(lua_table)
+        print(lua_table)
     end
     return data_table
 end
