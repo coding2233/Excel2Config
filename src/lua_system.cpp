@@ -18,7 +18,7 @@ static int GetFiles(lua_State* L)
             for (const auto &entry: fs::directory_iterator(path))
             {
                 lua_pushnumber(L,++file_index);
-                lua_pushstring(L,entry.path().c_str());
+                lua_pushstring(L,(const char*)entry.path().c_str());
                 lua_settable(L,-3);
             }
 
