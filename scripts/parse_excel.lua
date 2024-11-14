@@ -127,7 +127,7 @@ local function ParseExcelFile(excel_path)
     end
 end
 
-function ParseExcel(path)
+function ParseExcel(excel_path)
     -- print("ParseExcel",path)
 
     parse_excel = {}
@@ -136,11 +136,7 @@ function ParseExcel(path)
     parse_excel.enmu_list = {}
     parse_excel.excel_config = {}
 
-    local files = get_files(path)
-    -- print(#files,path)
-    for i = 1,#files do
-        ParseExcelFile(files[i])
-    end
+    ParseExcelFile(excel_path)
 
     return parse_excel
 end
@@ -197,12 +193,14 @@ local function EnumToProtobuf(enum_template)
     return table.concat(string_builder)
 end
 
-function ToProtobuf(excel_template,show_package)
+function ToProtobuf(excel_template)
     -- print("ToProtobuf")
     local string_builder = {}
-    table.insert(string_builder,"syntax = \"proto3\";\n\n")
-    if show_package ~= nil and excel_template.package ~= nil and string.len(excel_template.package) > 0 then
-        table.insert(string_builder,string.format("package %s;\n\n",excel_template.package))
+    local string_package = nil
+    -- table.insert(string_builder,"syntax = \"proto3\";\n\n")
+    if excel_template.package ~= nil and string.len(excel_template.package) > 0 then
+        -- table.insert(string_builder,string.format("package %s;\n\n",excel_template.package))
+        string_package = string.format("package %s;\n\n",excel_template.package)
     end
 
     -- EnumToProtobuf
@@ -225,7 +223,7 @@ function ToProtobuf(excel_template,show_package)
     -- print(#string_builder)
     local protobuf_string = table.concat(string_builder)
     print(protobuf_string)
-    return protobuf_string
+    return protobuf_string, string_package
 end
 
 function GetMessageTemplate(excel_template,message_name)

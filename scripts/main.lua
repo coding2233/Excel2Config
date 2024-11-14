@@ -2,51 +2,122 @@ require("config")
 require("parse_excel")
 require("excel_to_protobuf")
 
-print("hello xlnt lua.")
+-- print("hello xlnt lua.")
 
-local configs = parse_args()
 
-for k,v in pairs(configs) do
-    -- 
-    if "help"==k then
-        print_help()
-    elseif "excel"==k then
-        local parse_excel = ParseExcel(v)
-        local proto = ToProtobuf(parse_excel)
-        local proto_data_table = ToLuaTable(parse_excel)
-        for key, value in pairs(proto_data_table) do
-            local value_name = value.name
-            local value_data = value.data
-            print("protobuf_encode",key)
-            local data_path = get_exe_dir().."/package/data_temp.lua"
-            local data_file = io.open(data_path,"w")
+--执行目录
+local exec_dir = get_exe_dir()
+
+local function excel_to_protobuf(excel_file,excel_name,out_dir)
+    --解析excel
+    local parse_excel = ParseExcel(excel_file)
+    -- proto文件
+    local proto,proto_package = ToProtobuf(parse_excel)
+    local proto_parse = "syntax = \"proto3\";\n\n"..proto
+    -- protobuf 
+    local proto_data_table = ToLuaTable(parse_excel)
+    for key, value in pairs(proto_data_table) do
+        local value_name = value.name
+        local value_data = value.data
+        -- print("protobuf_encode",key)
+        -- 将protobuf lua table写入一个临时的lua文件
+        local data_path = exec_dir.."/package/data_temp.lua"
+        local data_file = io.open(data_path,"w")
+        if data_file ~= nil then
             data_file:write(value_data)
             data_file:close()
+        end
+        -- 读取protobuf的lua table
+        local data_table = require("data_temp")
+        local bytes = ProtobufExcelEncode(proto_parse,key,data_table)
+        -- PBTest()
 
-            local data_table = require("data_temp")
-            local bytes = ProtobufExcelEncode(proto,key,data_table)
-            -- PBTest()
-
-            local binary_path = get_exe_dir().."/"..value_name..".bytes"
-            local binary_file = io.open(binary_path,"w")
+        -- 生成配置的二进制文件
+        local binary_path = out_dir.."/"..value_name..".bytes"
+        local binary_file = io.open(binary_path,"w")
+        if binary_file ~= nil then
             binary_file:write(bytes)
             binary_file:close()
         end
-        
+    end
+    --保存proto文件
+    local proto_path = out_dir.."/"..excel_name..".proto"
+    local proto_content = "syntax = \"proto3\";\n\n"..proto_package..proto
+    local proto_file = io.open(proto_path,"w")
+        if proto_file ~= nil then
+            proto_file:write(proto_content)
+            proto_file:close()
+        end
+end
+
+local function find_excel(excel_dir,out_dir)
+    if excel_dir == nil then
+        print("excel_dir is nil.")
+        return
+    end
+
+    if out_dir == nil then
+        out_dir = excel_dir
+    end
+
+    local excel_files = get_files(excel_dir)
+    -- print(#files,path)
+    for i = 1,#excel_files do
+        local excel_file = string.gsub(excel_files[i],"\\","/")
+        local a,b = string.find(excel_file,".xlsx")
+        if a == nil then
+            a,b = string.find(excel_file,".xls")
+        end
+        if a ~= nil and a > 1 then
+            local find_index = 1
+            local excel_name = nil
+            while true do
+                local c,d = string.find(excel_file,"/",find_index)
+                if c == nil then
+                    excel_name = string.sub(excel_file,find_index,a-1)
+                    break
+                else
+                    find_index = c + 1
+                end
+            end
+
+            print(excel_file,#excel_file,a,b,find_index,excel_name)
+
+            excel_to_protobuf(excel_files[i],excel_name,out_dir)
+        end
     end
 end
 
--- function test_require()
---     local pb = require("pb")
---     print(pb)
--- end
+local function parse_args()
+    local excel2config_args = {}
+    local configs = ParseArgs()
+    for k,v in pairs(configs) do
+        -- 
+        if "help"==k then
+            PrintHelp()
+            return nil
+        elseif "version"==k then
+            print("version",VERSION)
+            return
+        elseif "excel"==k then
+            excel2config_args.excel_dir = v
+        elseif "out"==k then
+            excel2config_args.out_dir = v
+        end
+    end
+    return excel2config_args
+end
 
--- local status,error = pcall(test_require)
--- print(error)
+
+local function run()
+    local excel2config_args = parse_args()
+    if excel2config_args ~= nil then
+        find_excel(excel2config_args.excel_dir,excel2config_args.out_dir)
+    end
+end
+
+-- 执行
+run()
 
 
-
-print("[end] xlnt lua")
--- local test_reult = test_register();
--- print(test_reult)
 

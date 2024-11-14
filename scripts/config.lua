@@ -1,3 +1,5 @@
+VERSION = "0.0.1"
+
 local exe_dir = get_exe_dir();
 -- print(exe_dir)
 
@@ -34,9 +36,25 @@ local function excel_cmd(cmd)
     return cmd_arg
 end
 
+local function out_cmd(cmd)
+    local cmd_index = string.find(cmd,"=")
+    if cmd_index == nil then
+        return nil
+    end
+
+    if cmd_index >= string.len(cmd) then
+        return nil
+    end
+
+    local cmd_arg = string.sub(cmd,cmd_index+1)
+    return cmd_arg
+end
+
 local arg_configs = {
     {key="help", cmd={"--help","-h"},desc="print this text",callback=help_cmd},
-    {key="excel", cmd={"--excel","-e"},desc="excel",callback=excel_cmd},
+    {key="version", cmd={"--version","-v"},desc=VERSION,callback=help_cmd},
+    {key="excel", cmd={"--excel","-e"},desc="excel dir",callback=excel_cmd},
+    {key="out", cmd={"--out","-o"},desc="out dir",callback=out_cmd},
 }
 
 local function parse_help_text()
@@ -54,7 +72,7 @@ local function parse_help_text()
     return help_text
 end
 
-function print_help()
+function PrintHelp()
     local help_text = parse_help_text()
     for i = 1, #help_text do
         print(help_text[i])
@@ -81,7 +99,7 @@ local function check_arg(arg)
 end
 
 
-function parse_args()
+function ParseArgs()
     local configs = {}
     for i=1,#args do
         local key,result = check_arg(args[i])

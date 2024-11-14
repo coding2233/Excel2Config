@@ -34,12 +34,11 @@ local proto_scm = [[
 function ProtobufExcelEncode(proto,proto_name,data_table)
     -- data_table = collect
     -- proto = proto_scm
-    print("ProtobufExcelEncode",proto_name)
+    -- print("ProtobufExcelEncode",proto_name)
     -- print(proto)
     assert(protoc:load(proto),"protoc:load error")
-    print("---")
     local bytes = assert(pb.encode(proto_name,data_table))
-    print("protobuf_encode pb.encode",bytes)
+    -- print("protobuf_encode pb.encode",bytes)
     print(pb.tohex(bytes))
 
     return bytes
