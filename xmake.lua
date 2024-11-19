@@ -25,7 +25,7 @@ target("pb")
         os.cp("$(projectdir)/lua-protobuf-master/*.lua", package_path)
     end)
 
-target("excel2config")
+target("e2c")
     -- set_kind("shared")
     set_languages("cxx17")
     add_files("src/*.cpp")

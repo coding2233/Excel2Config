@@ -31,7 +31,8 @@ jobs:
     #     xmake -v
     - name: Check files
       run: |
-        ls -alhR build/
+        cp -r build/linux/x86_64/release e2c_linux
+        tar -zcvf e2c_linux.tar.gz e2c_linux
     - uses: actions/github-script@v7 
       with: 
         script: |
@@ -60,4 +61,5 @@ jobs:
         name: develop
         tag_name: develop
         fail_on_unmatched_files: true
-        files: build/linux/x86_64/release/*
+        files: |
+          e2c_linux.tar.gz
