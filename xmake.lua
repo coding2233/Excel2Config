@@ -46,4 +46,10 @@ target("e2c")
             os.mkdir(template_path)
         end 
         os.cp("$(projectdir)/template/*.xlsx", template_path)
+        -- 打包输出目录
+        local release_dir = "$(projectdir)/Excel2Config/"
+        if not os.isdir(release_dir) then 
+            os.mkdir(release_dir)
+        end 
+        os.cp(build_full_dir.."*", release_dir)
     end)

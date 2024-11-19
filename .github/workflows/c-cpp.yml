@@ -41,7 +41,7 @@ jobs:
           - os: windows-latest
             # name: windows-x86_64
             plat: windows
-            arch: x86_64
+            arch: x64
           - os: macos-14
             # name: macosx-arm64
             plat: macosx
@@ -68,7 +68,7 @@ jobs:
       with:
         name: e2c-${{ matrix.plat }}-${{ matrix.arch }}
         path: |
-          build/${{ matrix.plat }}/${{ matrix.arch }}/release/
+          Excel2Config/
           
     - uses: softprops/action-gh-release@v1
       with:
