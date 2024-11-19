@@ -22,11 +22,12 @@ jobs:
         platform: x64
     - name: Build linux
       run: |
+        xmake -v -y
+    - name: Build windows - mingw64
+      run: |
+        #xmake f -p mingw --sdk=/usr/local/i386-mingw32-4.3.0/ -a x86_64 -y
+        xmake f -p mingw -a x86_64 -y
         xmake -v
-    # - name: Build windows - mingw64
-    #   run: |
-    #     xmake f -p mingw --sdk=/usr/local/i386-mingw32-4.3.0/ -a x86_64
-    #     xmake -v
     - name: Check files
       run: |
         ls -alhR build/
