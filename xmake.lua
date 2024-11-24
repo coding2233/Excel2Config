@@ -10,9 +10,11 @@ target("pb")
     set_kind("shared")
     add_files("lua-protobuf-master/pb.c")
     add_packages("lua")
-    add_defines("LUA_BUILD_AS_DLL")
-    -- add_defines("LUA_LIB")
-    -- add_rules("utils.symbols.export_all", {export_classes = true})
+    if is_plat("windows") then
+        add_defines("LUA_BUILD_AS_DLL")
+        -- add_defines("LUA_LIB")
+        -- add_rules("utils.symbols.export_all", {export_classes = true})
+    end
     after_build(function (target) 
         local build_full_dir = "$(buildir)/$(plat)/$(arch)/$(mode)/"
         local target_name = target:name()
