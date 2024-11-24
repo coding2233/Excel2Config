@@ -1,6 +1,7 @@
 require("config")
 require("parse_excel")
 require("excel_to_protobuf")
+require("lfs")
 
 -- print("hello xlnt lua.")
 
@@ -60,30 +61,14 @@ local function find_excel(excel_dir,out_dir)
         out_dir = excel_dir
     end
 
-    local excel_files = get_files(excel_dir)
-    -- print(#files,path)
-    for i = 1,#excel_files do
-        local excel_file = string.gsub(excel_files[i],"\\","/")
+    for excel_file in lfs.dir(excel_dir) do
+        print(excel_file)
+        local excel_name = excel_file
         local a,b = string.find(excel_file,".xlsx")
-        if a == nil then
-            a,b = string.find(excel_file,".xls")
-        end
-        if a ~= nil and a > 1 then
-            local find_index = 1
-            local excel_name = nil
-            while true do
-                local c,d = string.find(excel_file,"/",find_index)
-                if c == nil then
-                    excel_name = string.sub(excel_file,find_index,a-1)
-                    break
-                else
-                    find_index = c + 1
-                end
-            end
-
-            print(excel_file,#excel_file,a,b,find_index,excel_name)
-
-            excel_to_protobuf(excel_files[i],excel_name,out_dir)
+        if a ~= nil then
+            excel_name = string.gsub(excel_file,".xlsx","")
+            print(excel_file,#excel_file,a,b,excel_name)
+            excel_to_protobuf(excel_dir.."/"..excel_file,excel_name,out_dir)
         end
     end
 end
@@ -117,7 +102,9 @@ local function run()
 end
 
 -- 执行
-run()
+local status,error = pcall(run())
+
+print("run",status,error)
 
 
 
