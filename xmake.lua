@@ -11,7 +11,7 @@ target("pb")
     add_files("lua-protobuf-master/pb.c")
     add_packages("lua")
     add_defines("LUA_BUILD_AS_DLL")
-    add_defines("LUA_LIB")
+    -- add_defines("LUA_LIB")
     -- add_rules("utils.symbols.export_all", {export_classes = true})
     after_build(function (target) 
         local build_full_dir = "$(buildir)/$(plat)/$(arch)/$(mode)/"
