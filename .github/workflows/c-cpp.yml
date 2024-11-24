@@ -60,7 +60,7 @@ jobs:
 
     - name: Build
       run: |
-        xmake f --toolchain=clang -y
+        #xmake f --toolchain=clang -y
         xmake -v -y
 
     - name: Test
