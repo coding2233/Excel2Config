@@ -63,6 +63,10 @@ jobs:
         xmake f --toolchain=clang -y
         xmake -v -y
 
+    - name: Test
+      run: |
+        ./Excel2Config/e2c --help
+
     - uses: actboy168/action-zip@main
       id: zip
       with:
