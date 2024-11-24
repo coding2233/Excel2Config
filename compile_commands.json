@@ -1,16 +1,16 @@
 [
 {
-  "directory": "/home/wanderer/Excel2Config",
-  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-fPIC", "-isystem", "/home/wanderer/.xmake/packages/l/lua/v5.4.7/3ffef909757944c98b565544e33b5796/include/lua", "-o", "build/.objs/pb/linux/x86_64/release/lua-protobuf-master/pb.c.o", "lua-protobuf-master/pb.c"],
-  "file": "lua-protobuf-master/pb.c"
+  "directory": "E:\\source\\Excel2Config",
+  "arguments": ["C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\cl.exe", "/c", "/nologo", "/std:c++17", "/EHsc", "/IC:\\Users\\wanderer\\AppData\\Local\\.xmake\\packages\\x\\xlnt\\2023.03.02\\7a052414040844fa96c40ca278395252\\include", "/IC:\\Users\\wanderer\\AppData\\Local\\.xmake\\packages\\l\\lua\\v5.4.7\\df5fbfc5131f49e3a571b07af9089027\\include\\lua", "/Fobuild\\.objs\\e2c\\windows\\x64\\release\\src\\lua_system.cpp.obj", "src\\lua_system.cpp"],
+  "file": "src\\lua_system.cpp"
 },
 {
-  "directory": "/home/wanderer/Excel2Config",
-  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-std=c++17", "-isystem", "/home/wanderer/.xmake/packages/x/xlnt/2023.03.02/ca593baa9bee4de2b9871141332d931c/include", "-isystem", "/home/wanderer/.xmake/packages/l/lua/v5.4.7/3ffef909757944c98b565544e33b5796/include/lua", "-o", "build/.objs/excel2config/linux/x86_64/release/src/lua_system.cpp.o", "src/lua_system.cpp"],
-  "file": "src/lua_system.cpp"
+  "directory": "E:\\source\\Excel2Config",
+  "arguments": ["C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\cl.exe", "/c", "/nologo", "/std:c++17", "/EHsc", "/IC:\\Users\\wanderer\\AppData\\Local\\.xmake\\packages\\x\\xlnt\\2023.03.02\\7a052414040844fa96c40ca278395252\\include", "/IC:\\Users\\wanderer\\AppData\\Local\\.xmake\\packages\\l\\lua\\v5.4.7\\df5fbfc5131f49e3a571b07af9089027\\include\\lua", "/Fobuild\\.objs\\e2c\\windows\\x64\\release\\src\\main.cpp.obj", "src\\main.cpp"],
+  "file": "src\\main.cpp"
 },
 {
-  "directory": "/home/wanderer/Excel2Config",
-  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-std=c++17", "-isystem", "/home/wanderer/.xmake/packages/x/xlnt/2023.03.02/ca593baa9bee4de2b9871141332d931c/include", "-isystem", "/home/wanderer/.xmake/packages/l/lua/v5.4.7/3ffef909757944c98b565544e33b5796/include/lua", "-o", "build/.objs/excel2config/linux/x86_64/release/src/main.cpp.o", "src/main.cpp"],
-  "file": "src/main.cpp"
+  "directory": "E:\\source\\Excel2Config",
+  "arguments": ["C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\cl.exe", "/c", "/nologo", "/DLUA_BUILD_AS_DLL", "/IC:\\Users\\wanderer\\AppData\\Local\\.xmake\\packages\\l\\lua\\v5.4.7\\df5fbfc5131f49e3a571b07af9089027\\include\\lua", "/Fobuild\\.objs\\pb\\windows\\x64\\release\\lua-protobuf-master\\pb.c.obj", "lua-protobuf-master\\pb.c"],
+  "file": "lua-protobuf-master\\pb.c"
 }]
