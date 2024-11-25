@@ -2,7 +2,8 @@ require("config")
 require("parse_excel")
 require("excel_to_protobuf")
 require("lfs")
-
+log = require "log"
+log.level = "info"
 -- print("hello xlnt lua.")
 
 
@@ -84,6 +85,8 @@ local function parse_args()
         elseif "version"==k then
             print("version",VERSION)
             return
+        elseif "debug"==k then
+            log.level = "trace"
         elseif "excel"==k then
             excel2config_args.excel_dir = v
         elseif "out"==k then

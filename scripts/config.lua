@@ -52,6 +52,7 @@ end
 
 local arg_configs = {
     {key="help", cmd={"--help","-h"},desc="print this text",callback=help_cmd},
+    {key="debug", cmd={"--debug","-d"},desc="Output more debug logs",callback=help_cmd},
     {key="version", cmd={"--version","-v"},desc=VERSION,callback=help_cmd},
     {key="excel", cmd={"--excel","-e"},desc="excel dir",callback=excel_cmd},
     {key="out", cmd={"--out","-o"},desc="out dir",callback=out_cmd},
