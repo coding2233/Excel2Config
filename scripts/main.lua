@@ -1,5 +1,4 @@
 require("config")
-require("excel_to_protobuf")
 require("lfs")
 local parse_excel = require("parse_excel")
 
@@ -35,7 +34,8 @@ local function parse_excel_to_protobuf(excel_file,excel_name,out_dir,target)
             -- 读取protobuf的lua table
             local data_table = require("data_temp")
             log.info("lua table write success. -> ",data_path,data_table)
-            local bytes = ProtobufExcelEncode(proto_parse,key,data_table)
+            local excel_pb = require("excel_to_protobuf")
+            local bytes = excel_pb.ProtobufExcelEncode(proto_parse,key,data_table)
             -- PBTest()
 
             -- 生成配置的二进制文件

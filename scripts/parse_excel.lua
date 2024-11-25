@@ -176,7 +176,7 @@ function this.MessageToProtobuf(message_template)
     for i=1, #message_template.var_list do
         local message_var = message_template.var_list[i]
         if message_var.desc ~= nil and #message_var.desc > 0 then
-            table.insert(string_builder, string.format("\t//%s\n",message_var.desc))
+             table.insert(string_builder, string.format("\t//%s\n",message_var.desc))
         end
         local var_string = message_var.var
         local var_type_string = message_var.type
@@ -246,6 +246,7 @@ function this.ConfigToLuaTable(message_name,config_name)
             local message_var_string = this.MessageVarToLua(message_template.var_list[i],row_data)
             if message_var_string ~= nil and #message_var_string > 0 then
                 table.insert(string_builder,message_var_string)
+                table.insert(string_builder,",")
             end
         end
     end

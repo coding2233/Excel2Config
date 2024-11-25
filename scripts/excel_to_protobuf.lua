@@ -1,3 +1,5 @@
+local excel_pb = {}
+
 local pb = require "pb"
 local protoc = require "protoc"
 
@@ -31,10 +33,10 @@ local proto_scm = [[
     }
 ]]
 
-function ProtobufExcelEncode(proto,proto_name,data_table)
+function excel_pb.ProtobufExcelEncode(proto,proto_name,data_table)
     -- data_table = collect
     -- proto = proto_scm
-    -- log.debug("ProtobufExcelEncode",proto_name)
+    log.debug(string.format("ProtobufExcelEncode\n %s\n%s\n%s",proto_name,proto,data_table))
     -- log.debug(proto)
     assert(protoc:load(proto),"protoc:load error")
     local bytes = assert(pb.encode(proto_name,data_table))
@@ -89,3 +91,5 @@ end
 --     local data = assert(pb.decode(proto_name,data_bytes))
 --     -- log.debug(pb.tohex(bytes))
 -- end
+
+return excel_pb
