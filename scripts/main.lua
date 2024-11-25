@@ -24,7 +24,10 @@ local function parse_excel_to_protobuf(excel_file,excel_name,out_dir,target)
             local value_data = value.data
             -- log.debug("protobuf_encode",key,value_name,value_data)
             -- 将protobuf lua table写入一个临时的lua文件
-            local data_path = exec_dir.."/package/data_temp.lua"
+            local rand_key = math.random(10000)
+            local time_key = os.time()
+            local data_temp_name = string.format("t_%s_%s_%s_%s",key,value_name,tostring(rand_key),tostring(time_key))
+            local data_path = exec_dir.."/package/"..data_temp_name..".lua"
             local data_file = io.open(data_path,"w")
             if data_file ~= nil then
                 data_file:write(value_data)
@@ -32,7 +35,7 @@ local function parse_excel_to_protobuf(excel_file,excel_name,out_dir,target)
                 log.debug("write succee->",key,value_name,data_path)
             end
             -- 读取protobuf的lua table
-            local data_table = require("data_temp")
+            local data_table = require(data_temp_name)
             log.info("lua table write success. -> ",data_path,data_table)
             local excel_pb = require("excel_to_protobuf")
             local bytes = excel_pb.ProtobufExcelEncode(proto_parse,key,data_table)

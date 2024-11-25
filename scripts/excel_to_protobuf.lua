@@ -36,12 +36,12 @@ local proto_scm = [[
 function excel_pb.ProtobufExcelEncode(proto,proto_name,data_table)
     -- data_table = collect
     -- proto = proto_scm
-    log.debug(string.format("ProtobufExcelEncode\n %s\n%s\n%s",proto_name,proto,data_table))
+    log.info(string.format("ProtobufExcelEncode\n %s\n%s\n%s",proto_name,proto,data_table))
     -- log.debug(proto)
     assert(protoc:load(proto),"protoc:load error")
     local bytes = assert(pb.encode(proto_name,data_table))
     -- log.debug("protobuf_encode pb.encode",bytes)
-    log.debug(pb.tohex(bytes))
+    log.info(pb.tohex(bytes))
 
     return bytes
 end
