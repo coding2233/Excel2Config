@@ -1,4 +1,3 @@
--- require ("parse_excel_template")
 
 local parse_excel = {}
 
@@ -17,7 +16,7 @@ local function ParseMessage(vSheet,kRow,kCell)
 
     --检查
     if vSheet[kRow] == nil or vSheet[kRow+1] == nil or vSheet[kRow+2] == nil or vSheet[kRow+3] == nil then
-        print("excel message template cannot be parsed normally")
+        log.debug("excel message template cannot be parsed normally")
         return kRow,kCell
     end
 
@@ -32,7 +31,7 @@ local function ParseMessage(vSheet,kRow,kCell)
     while true do
         local var_type = vSheet[kRow+1][kCell+var_index]
         if var_type == nil or #var_type == 0 or string.len(var_type) == 0 then
-            -- print("while var_list break")
+            log.debug("while var_list break")
             break
         end
         
@@ -45,7 +44,7 @@ local function ParseMessage(vSheet,kRow,kCell)
 
    
     -- 消息模板
-    -- print(type,kRow,kCell,#var_list)
+    log.debug(type,kRow,kCell,#var_list)
     local message_template = {sheet=vSheet,type = type,row=kRow,cloumn = kCell, var_list = var_list}
     table.insert(parse_excel.message_template_list,message_template)
 
@@ -88,7 +87,7 @@ end
 
 local function ParsePackage(vSheet,kRow,kCell)
     parse_excel.package = vSheet[kRow][kCell+1]
-    -- print("ParsePackage",parse_excel.package)
+    log.debug("ParsePackage",parse_excel.package)
 
     return kRow,kCell+1
 end
@@ -122,13 +121,13 @@ local function ParseExcelFile(excel_path)
     local excel = read_excel(excel_path)
     -- sheet
     for kSheet,vSheet in pairs(excel) do
-        -- print(kSheet,vSheet)
+        log.debug(kSheet,vSheet)
         ParseExcelCell(vSheet)
     end
 end
 
 function ParseExcel(excel_path)
-    -- print("ParseExcel",path)
+    log.debug("ParseExcel",path)
 
     parse_excel = {}
     parse_excel.package = nil
@@ -142,7 +141,7 @@ function ParseExcel(excel_path)
 end
 
 local function MessageToProtobuf(message_template)
-    -- print("message_template",message_template,message_template.type,#message_template.var_list)
+    log.debug("message_template",message_template,message_template.type,#message_template.var_list)
     local string_builder = {}
     -- local message_template = {type = type,row=kRow,cloumn = kCell, var_list = var_list}
     -- local var_data = {type = var_type, var = var_name, desc = var_desc}
@@ -158,7 +157,7 @@ local function MessageToProtobuf(message_template)
         -- map<string,string> 
         -- repeated int32
         local sub_index = string.find(var_type_string,"#")
-        -- print("--------",var_type_string,sub_index)
+        -- log.debug("--------",var_type_string,sub_index)
         if sub_index ~= nil and sub_index > 1 then
             var_type_string = string.sub(var_type_string,1,sub_index-1)
         end
@@ -194,7 +193,7 @@ local function EnumToProtobuf(enum_template)
 end
 
 function ToProtobuf(excel_template)
-    -- print("ToProtobuf")
+    log.debug("ToProtobuf")
     local string_builder = {}
     local string_package = nil
     -- table.insert(string_builder,"syntax = \"proto3\";\n\n")
@@ -215,14 +214,14 @@ function ToProtobuf(excel_template)
     for i=1,#excel_template.message_template_list do
         local message_string = MessageToProtobuf(excel_template.message_template_list[i])
         if message_string~=nil and #message_string > 0 then
-            -- print(message_string)
+            log.debug(message_string)
             table.insert(string_builder,message_string)
         end
     end
 
-    -- print(#string_builder)
+    --log.debug(#string_builder)
     local protobuf_string = table.concat(string_builder)
-    print(protobuf_string)
+    log.debug(protobuf_string)
     return protobuf_string, string_package
 end
 
@@ -254,20 +253,20 @@ function MessageTypeVarToLua(message_var,excel_template)
     end
 
     local message_template = GetMessageTemplate(excel_template,type_name)
-    -- print("MessageTypeVarToLua",type,type_name,is_list,var,message_template)
+    log.debug("MessageTypeVarToLua",type,type_name,is_list,var,message_template)
 
     if message_template ~= nil then
         -- for key, value in pairs(message_template) do
-        --     print(key,value)
+        --     log.debug(key,value)
         -- end
         local find_message_template_row = message_template.row
-        -- print( message_template.row,message_template.cloumn, message_template.type,message_template.sheet)
+        log.debug( message_template.row,message_template.cloumn, message_template.type,message_template.sheet)
         table.insert(string_builder,string.format("%s={",var))
         if is_list then
             local find_row_index = 4;
             while true do
                 local find_row_data = message_template.sheet[find_message_template_row+find_row_index]
-                -- print(find_message_template_row,find_row_index,find_row_data)
+                log.debug(find_message_template_row,find_row_index,find_row_data)
                 if find_row_data ~= nil then
                     -- todo 检查这一行都是空数据 100太假了
                     local is_all_nil = true
@@ -283,7 +282,7 @@ function MessageTypeVarToLua(message_var,excel_template)
                         break
                     end
                     table.insert(string_builder,"{")
-                    -- print(#message_template.var_list)
+                    log.debug(#message_template.var_list)
                     for i=1,#message_template.var_list do
                         local message_var_string = MessageVarToLua(message_template.var_list[i],excel_template,find_row_data)
                         if message_var_string ~= nil and #message_var_string > 0 then
@@ -362,7 +361,7 @@ function MessageBaseVarToLua(message_var,excel_template,row_data_target)
     end
 
     if type_string ~= nil then
-        -- print(type_string)
+        log.debug(type_string)
         local find_type_is_string = string.find(type_string,"string")
         type_is_string = find_type_is_string ~= nil and find_type_is_string >0
 
@@ -487,7 +486,7 @@ function ToLuaTable(excel_template)
     for key, value in pairs(excel_template.excel_config) do
         local lua_table = ConfigToLuaTable(key,value,excel_template)
         data_table[key] = {name=value,data = lua_table}
-        print(lua_table)
+        log.debug(lua_table)
     end
     return data_table
 end

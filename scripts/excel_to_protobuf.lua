@@ -34,12 +34,12 @@ local proto_scm = [[
 function ProtobufExcelEncode(proto,proto_name,data_table)
     -- data_table = collect
     -- proto = proto_scm
-    -- print("ProtobufExcelEncode",proto_name)
-    -- print(proto)
+    -- log.debug("ProtobufExcelEncode",proto_name)
+    -- log.debug(proto)
     assert(protoc:load(proto),"protoc:load error")
     local bytes = assert(pb.encode(proto_name,data_table))
-    -- print("protobuf_encode pb.encode",bytes)
-    print(pb.tohex(bytes))
+    -- log.debug("protobuf_encode pb.encode",bytes)
+    log.debug(pb.tohex(bytes))
 
     return bytes
 end
@@ -74,11 +74,11 @@ function PBTest()
     
     -- encode lua table data into binary format in lua string and return
     local bytes = assert(pb.encode("Person", data))
-    print(pb.tohex(bytes))
+    log.debug(pb.tohex(bytes))
     
     -- and decode the binary data back into lua table
     local data2 = assert(pb.decode("Person", bytes))
-    print(require "serpent".block(data2))
+    log.debug(require "serpent".block(data2))
 end
 
 
@@ -87,5 +87,5 @@ end
 --     assert(protoc:load(proto))
 
 --     local data = assert(pb.decode(proto_name,data_bytes))
---     -- print(pb.tohex(bytes))
+--     -- log.debug(pb.tohex(bytes))
 -- end

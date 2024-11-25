@@ -1,16 +1,16 @@
 local excel = read_excel("example.xlsx")
 
--- print(excel)
+-- log.debug(excel)
 
 -- sheet
 for kSheet,vSheet in pairs(excel) do
-    print(kSheet,vSheet)
+    log.debug(kSheet,vSheet)
     -- row
     for kRow,vRow in pairs(vSheet) do
-        print(kRow,vRow)
+        log.debug(kRow,vRow)
         -- cell
         for kCell,vCell in pairs(vRow) do
-            print(kCell,vCell)
+            log.debug(kCell,vCell)
         end
     end
  

@@ -4,7 +4,6 @@ require("excel_to_protobuf")
 require("lfs")
 log = require "log"
 log.level = "info"
--- print("hello xlnt lua.")
 
 
 --执行目录
@@ -21,7 +20,7 @@ local function excel_to_protobuf(excel_file,excel_name,out_dir)
     for key, value in pairs(proto_data_table) do
         local value_name = value.name
         local value_data = value.data
-        -- print("protobuf_encode",key)
+        log.debug("protobuf_encode",key)
         -- 将protobuf lua table写入一个临时的lua文件
         local data_path = exec_dir.."/package/data_temp.lua"
         local data_file = io.open(data_path,"w")
@@ -54,7 +53,7 @@ end
 
 local function find_excel(excel_dir,out_dir)
     if excel_dir == nil then
-        print("excel_dir is nil.")
+        log.error("excel_dir is nil.")
         return
     end
 
@@ -63,12 +62,12 @@ local function find_excel(excel_dir,out_dir)
     end
 
     for excel_file in lfs.dir(excel_dir) do
-        print(excel_file)
+        log.debug(excel_file)
         local excel_name = excel_file
         local a,b = string.find(excel_file,".xlsx")
         if a ~= nil then
             excel_name = string.gsub(excel_file,".xlsx","")
-            print(excel_file,#excel_file,a,b,excel_name)
+            log.debug(excel_file,#excel_file,a,b,excel_name)
             excel_to_protobuf(excel_dir.."/"..excel_file,excel_name,out_dir)
         end
     end
@@ -107,7 +106,7 @@ end
 -- 执行
 local status,error = pcall(run())
 
-print("run",status,error)
+log.info("run",status,error)
 
 
 
