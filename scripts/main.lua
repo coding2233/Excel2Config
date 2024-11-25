@@ -1,7 +1,9 @@
 require("config")
-require("parse_excel")
+-- require("parse_excel")
 require("excel_to_protobuf")
 require("lfs")
+local parse_excel_new = require("parse_excel_new")
+
 log = require "log"
 log.level = "info"
 
@@ -51,6 +53,51 @@ local function excel_to_protobuf(excel_file,excel_name,out_dir)
         end
 end
 
+local function excel_to_protobuf_new(excel_file,excel_name,out_dir)
+    log.debug("excel_to_protobuf_new",excel_file,excel_name,out_dir)
+    --加载excel
+    parse_excel_new.Load(excel_file)
+    -- proto
+    local proto,proto_package = parse_excel_new.ToProtobuf()
+    local proto_parse = "syntax = \"proto3\";\n\n"..proto
+    -- protobuf 
+    local proto_data_table = parse_excel_new.ToLuaTable()
+    for key, value in pairs(proto_data_table) do
+        local value_name = value.name
+        local value_data = value.data
+        -- log.debug("protobuf_encode",key,value_name,value_data)
+        -- 将protobuf lua table写入一个临时的lua文件
+        local data_path = exec_dir.."/package/data_temp.lua"
+        local data_file = io.open(data_path,"w")
+        if data_file ~= nil then
+            data_file:write(value_data)
+            data_file:close()
+            log.debug("write succee->",key,value_name,data_path)
+        end
+        -- 读取protobuf的lua table
+        local data_table = require("data_temp")
+        log.debug(data_path,data_table)
+        local bytes = ProtobufExcelEncode(proto_parse,key,data_table)
+        -- PBTest()
+
+        -- 生成配置的二进制文件
+        local binary_path = out_dir.."/"..value_name..".bytes"
+        local binary_file = io.open(binary_path,"w")
+        if binary_file ~= nil then
+            binary_file:write(bytes)
+            binary_file:close()
+        end
+    end
+    --保存proto文件
+    local proto_path = out_dir.."/"..excel_name..".proto"
+    local proto_content = "syntax = \"proto3\";\n\n"..proto_package..proto
+    local proto_file = io.open(proto_path,"w")
+    if proto_file ~= nil then
+        proto_file:write(proto_content)
+        proto_file:close()
+    end
+end
+
 local function find_excel(excel_dir,out_dir)
     if excel_dir == nil then
         log.error("excel_dir is nil.")
@@ -68,7 +115,7 @@ local function find_excel(excel_dir,out_dir)
         if a ~= nil then
             excel_name = string.gsub(excel_file,".xlsx","")
             log.debug(excel_file,#excel_file,a,b,excel_name)
-            excel_to_protobuf(excel_dir.."/"..excel_file,excel_name,out_dir)
+            excel_to_protobuf_new(excel_dir.."/"..excel_file,excel_name,out_dir)
         end
     end
 end

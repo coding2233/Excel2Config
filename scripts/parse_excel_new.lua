@@ -1,18 +1,52 @@
+local parse_excel_new = {}
+local this = parse_excel_new
 
-local parse_excel = {}
-
+--基础类型
 local var_base_type_list = {"int32","string","bool","float"}
 
-local function TableConcatEx(table_data)
-    local string_builder_result = table.concat(table_data)
-    local i,result_j = string.find(string_builder_result,",",-1)
-    if result_j == #string_builder_result then
-        string_builder_result = string.sub(string_builder_result,1,result_j-1)
+
+function this.Load(excel_path)
+    this.package = nil
+    this.message_template_list = {}
+    this.enmu_list = {}
+    this.excel_config = {}
+    --read excel
+    local excel = read_excel(excel_path)
+    for kSheet,vSheet in pairs(excel) do
+        this.ParseExcel(vSheet)
     end
-    return string_builder_result
 end
 
-local function ParseMessage(vSheet,kRow,kCell)
+
+
+---ParseExcel [start]---
+
+function this.ParseExcel(vSheet)
+    for row = 1, #vSheet do
+        local row_data = vSheet[row]
+        for cloumn = 1, #row_data do
+            local next_row = row
+            local next_cloumn = cloumn
+            local cell = row_data[cloumn]
+            if "#message" == cell then
+                next_row,next_cloumn = this.ParseMessage(vSheet,row,cloumn)
+            -- 拼写错误
+            elseif "#enum" == cell then
+                next_row,next_cloumn = this.ParseEnum(vSheet,row,cloumn)
+            elseif "#package" == cell then
+                next_row,next_cloumn = this.ParsePackage(vSheet,row,cloumn)
+            end
+            -- 更新读取excel的行列索引
+            cloumn = next_cloumn
+            if row ~= next_row then
+                row = next_row
+                break
+            end
+        end
+    end
+end
+
+function this.ParseMessage(vSheet,kRow,kCell)
 
     --检查
     if vSheet[kRow] == nil or vSheet[kRow+1] == nil or vSheet[kRow+2] == nil or vSheet[kRow+3] == nil then
@@ -44,22 +78,23 @@ local function ParseMessage(vSheet,kRow,kCell)
 
    
     -- 消息模板
-    log.debug(type,kRow,kCell,#var_list)
+    -- log.debug(type,kRow,kCell,#var_list)
     local message_template = {sheet=vSheet,type = type,row=kRow,cloumn = kCell, var_list = var_list}
-    table.insert(parse_excel.message_template_list,message_template)
+    table.insert(this.message_template_list,message_template)
 
     -- 配置入口
     if vSheet[kRow-1] ~= nil and vSheet[kRow-1][kCell] ~= nil and "#config" == vSheet[kRow-1][kCell] then
         local config_value = vSheet[kRow-1][kCell+1]
-        if config_value ~= nil then
-            parse_excel.excel_config[type] = config_value
+        if config_value ~= nil and  #config_value > 0 then
+            this.excel_config[type] = config_value
+            log.debug("excel_config",type,config_value,#config_value,kRow,kCell)
         end
     end
 
     return kRow,kCell
 end
 
-local function ParseEnum(vSheet,kRow,kCell)
+function this.ParseEnum(vSheet,kRow,kCell)
     local enum_type = vSheet[kRow][kCell+1]
     local enmu_desc = vSheet[kRow+1][kCell+1]
     local enum_value_list = {}
@@ -81,66 +116,57 @@ local function ParseEnum(vSheet,kRow,kCell)
     end
 
     local enum_type = {type=enum_type,desc=enmu_desc,value_list=enum_value_list}
-    table.insert(parse_excel.enmu_list,enum_type)
+    table.insert(this.enmu_list,enum_type)
     return kRow+enum_value_index,1
 end
 
-local function ParsePackage(vSheet,kRow,kCell)
-    parse_excel.package = vSheet[kRow][kCell+1]
-    log.debug("ParsePackage",parse_excel.package)
+function this.ParsePackage(vSheet,kRow,kCell)
+    this.package = vSheet[kRow][kCell+1]
+    log.debug("ParsePackage",this.package)
 
     return kRow,kCell+1
 end
 
-local function ParseExcelCell(vSheet)
-    for row = 1, #vSheet do
-        local row_data = vSheet[row]
-        for cloumn = 1, #row_data do
-            local next_row = row
-            local next_cloumn = cloumn
-            local cell = row_data[cloumn]
-            if "#message" == cell then
-                next_row,next_cloumn = ParseMessage(vSheet,row,cloumn)
-            -- 拼写错误
-            elseif "#enum" == cell then
-                next_row,next_cloumn = ParseEnum(vSheet,row,cloumn)
-            elseif "#package" == cell then
-                next_row,next_cloumn = ParsePackage(vSheet,row,cloumn)
-            end
-            -- 更新读取excel的行列索引
-            cloumn = next_cloumn
-            if row ~= next_row then
-                row = next_row
-                break
-            end
+---ParseExcel [end]---
+
+
+
+
+---ToProtobuf [start]---
+
+function this.ToProtobuf()
+    log.debug("ToProtobuf")
+    local string_builder = {}
+    local string_package = nil
+    -- table.insert(string_builder,"syntax = \"proto3\";\n\n")
+    if this.package ~= nil and string.len(this.package) > 0 then
+        string_package = string.format("package %s;\n\n",this.package)
+    end
+
+    -- EnumToProtobuf
+    for i=1,#this.enmu_list do
+        local enmu_string = this.EnumToProtobuf(this.enmu_list[i])
+        if enmu_string~=nil and string.len(enmu_string) > 0 then
+            table.insert(string_builder,enmu_string)
         end
     end
-end
 
-local function ParseExcelFile(excel_path)
-    local excel = read_excel(excel_path)
-    -- sheet
-    for kSheet,vSheet in pairs(excel) do
-        log.debug(kSheet,vSheet)
-        ParseExcelCell(vSheet)
+    -- MessageToProtobuf
+    for i=1,#this.message_template_list do
+        local message_string = this.MessageToProtobuf(this.message_template_list[i])
+        if message_string~=nil and #message_string > 0 then
+            -- log.debug(message_string)
+            table.insert(string_builder,message_string)
+        end
     end
+
+    --log.debug(#string_builder)
+    local protobuf_string = table.concat(string_builder)
+    log.debug("ToProtobuf\n",protobuf_string)
+    return protobuf_string, string_package
 end
 
-function ParseExcel(excel_path)
-    log.debug("ParseExcel",excel_path)
-
-    parse_excel = {}
-    parse_excel.package = nil
-    parse_excel.message_template_list = {}
-    parse_excel.enmu_list = {}
-    parse_excel.excel_config = {}
-
-    ParseExcelFile(excel_path)
-
-    return parse_excel
-end
-
-local function MessageToProtobuf(message_template)
+function this.MessageToProtobuf(message_template)
     log.debug("message_template",message_template,message_template.type,#message_template.var_list)
     local string_builder = {}
     -- local message_template = {type = type,row=kRow,cloumn = kCell, var_list = var_list}
@@ -168,7 +194,7 @@ local function MessageToProtobuf(message_template)
     return table.concat(string_builder)
 end
 
-local function EnumToProtobuf(enum_template)
+function this.EnumToProtobuf(enum_template)
     --local enum_type = {type=enum_type,desc=enmu_desc,value_list=enum_value_list}
     local string_builder = {}
     local type = enum_template.type
@@ -192,52 +218,82 @@ local function EnumToProtobuf(enum_template)
     return table.concat(string_builder)
 end
 
-function ToProtobuf(excel_template)
-    log.debug("ToProtobuf")
-    local string_builder = {}
-    local string_package = nil
-    -- table.insert(string_builder,"syntax = \"proto3\";\n\n")
-    if excel_template.package ~= nil and string.len(excel_template.package) > 0 then
-        -- table.insert(string_builder,string.format("package %s;\n\n",excel_template.package))
-        string_package = string.format("package %s;\n\n",excel_template.package)
-    end
+---ToProtobuf [end]---
 
-    -- EnumToProtobuf
-    for i=1,#excel_template.enmu_list do
-        local enmu_string = EnumToProtobuf(excel_template.enmu_list[i])
-        if enmu_string~=nil and string.len(enmu_string) > 0 then
-            table.insert(string_builder,enmu_string)
-        end
-    end
 
-    -- MessageToProtobuf
-    for i=1,#excel_template.message_template_list do
-        local message_string = MessageToProtobuf(excel_template.message_template_list[i])
-        if message_string~=nil and #message_string > 0 then
-            log.debug(message_string)
-            table.insert(string_builder,message_string)
-        end
-    end
+---ToLuaTable [start]---
 
-    --log.debug(#string_builder)
-    local protobuf_string = table.concat(string_builder)
-    log.debug(protobuf_string)
-    return protobuf_string, string_package
+function this.ToLuaTable()
+    local data_table = {}
+    for key, value in pairs(this.excel_config) do
+        log.debug("ToLuaTable",key,value)
+        local lua_table = this.ConfigToLuaTable(key,value)
+        data_table[key] = {name=value,data = lua_table}
+        log.debug(string.format("ToLuaTable\n%s\n%s\n%s\n",key,value,lua_table))
+    end
+    return data_table
 end
 
-function GetMessageTemplate(excel_template,message_name)
-    for i=1,#excel_template.message_template_list do
-        local message_template = excel_template.message_template_list[i]
+function this.ConfigToLuaTable(message_name,config_name)
+    log.debug("ConfigToLuaTable",message_name,config_name)
+    local string_builder = {}
+    table.insert(string_builder,string.format("local %s={\n",config_name))
+
+    local message_template = this.GetMessageTemplate(message_name)
+    if message_template ~= nil then
+        local row_data = message_template.sheet[message_template.row+4]
+        for i=1,#message_template.var_list do
+            local message_var_string = this.MessageVarToLua(message_template.var_list[i],row_data)
+            if message_var_string ~= nil and #message_var_string > 0 then
+                table.insert(string_builder,message_var_string)
+            end
+        end
+    end
+    table.insert(string_builder,string.format("}\n return %s\n",config_name))
+    return table.concat(string_builder)
+end
+
+function this.GetMessageTemplate(message_name)
+    log.debug("GetMessageTemplate",message_name,#this.message_template_list)
+    for i=1,#this.message_template_list do
+        local message_template = this.message_template_list[i]
         if message_name == message_template.type then
+            log.debug("GetMessageTemplate found",message_name,#this.message_template_list,message_template.type,message_template)
             return message_template
         end
     end
+    log.error("GetMessageTemplate not found.",message_name)
     return nil
 end
 
+function this.MessageVarToLua(message_var,row_data_target)
+    log.debug("MessageVarToLua",message_var, message_var.type,row_data_target)
+    local type = message_var.type
+    local type_is_base = false
+    for i=1, #var_base_type_list do
+        if type == var_base_type_list[i] then
+            type_is_base = true
+            break
+        else
+            local var_base_list_type = "repeated "..var_base_type_list[i]
+            if string.find(type,var_base_list_type) == 1 then
+                type_is_base = true
+                break
+            end
+        end
+    end
 
+    log.debug("MessageVarToLua",type,type_is_base)
+    local message_var_string = nil
+    if type_is_base then
+        message_var_string = this.MessageBaseVarToLua(message_var,row_data_target)
+    else
+        message_var_string = this.MessageTypeVarToLua(message_var)
+    end
+    return message_var_string
+end
 
-function MessageTypeVarToLua(message_var,excel_template)
+function this.MessageTypeVarToLua(message_var)
     local string_builder = {}
     local type = message_var.type
     local var  = message_var.var
@@ -252,7 +308,7 @@ function MessageTypeVarToLua(message_var,excel_template)
         is_list = true
     end
 
-    local message_template = GetMessageTemplate(excel_template,type_name)
+    local message_template = this.GetMessageTemplate(type_name)
     log.debug("MessageTypeVarToLua",type,type_name,is_list,var,message_template)
 
     if message_template ~= nil then
@@ -268,7 +324,7 @@ function MessageTypeVarToLua(message_var,excel_template)
                 local find_row_data = message_template.sheet[find_message_template_row+find_row_index]
                 log.debug(find_message_template_row,find_row_index,find_row_data)
                 if find_row_data ~= nil then
-                    -- todo 检查这一行都是空数据 100太假了
+                    -- todo: 检查这一行都是空数据 100太假了
                     local is_all_nil = true
                     for i=1,100 do
                         if find_row_data[i]~=nil and #find_row_data[i] > 0 then
@@ -282,9 +338,9 @@ function MessageTypeVarToLua(message_var,excel_template)
                         break
                     end
                     table.insert(string_builder,"{")
-                    log.debug(#message_template.var_list)
+                    -- log.debug(#message_template.var_list)
                     for i=1,#message_template.var_list do
-                        local message_var_string = MessageVarToLua(message_template.var_list[i],excel_template,find_row_data)
+                        local message_var_string = this.MessageVarToLua(message_template.var_list[i],find_row_data)
                         if message_var_string ~= nil and #message_var_string > 0 then
                             table.insert(string_builder,string.format("%s,",message_var_string))
                         end
@@ -301,7 +357,7 @@ function MessageTypeVarToLua(message_var,excel_template)
             local find_row_data = message_template.sheet[find_message_template_row+4]
 
             for i=1,#message_template.var_list do
-                local message_var_string = MessageVarToLua(message_template.var_list[i],excel_template,find_row_data)
+                local message_var_string = this.MessageVarToLua(message_template.var_list[i],find_row_data)
                 if message_var_string ~= nil and #message_var_string > 0 then
                     table.insert(string_builder,message_var_string)
                 end
@@ -310,33 +366,10 @@ function MessageTypeVarToLua(message_var,excel_template)
         table.insert(string_builder,string.format("},",var))
     end
 
-    return TableConcatEx(string_builder)
+    return this.TableConcatEx(string_builder)
 end
 
-
-
-function MessageMapVarToLua(message_var,excel_template,row_data_target)
-    local string_builder = {}
-    local type = message_var.type
-    local var  = message_var.var
-    local row = message_var.row
-    local cloumn = message_var.cloumn
-    
-    local var_value = row_data_target[cloumn]
-    if var_value == nil then
-        var_value = ""
-    end
-
-    table.insert(string_builder,"{")
-    for k, v in string.gmatch(var_value, "(%w+):(%w+)") do
-        table.insert(string_builder,string.format("%s=%s,",k,v))
-    end
-    table.insert(string_builder,"},")
-
-    return TableConcatEx(string_builder)
-end
-
-function MessageBaseVarToLua(message_var,excel_template,row_data_target)
+function this.MessageBaseVarToLua(message_var,row_data)
     local string_builder = {}
     local type = message_var.type
     local var  = message_var.var
@@ -360,7 +393,7 @@ function MessageBaseVarToLua(message_var,excel_template,row_data_target)
         end
     end
 
-    log.debug("MessageBaseVarToLua",type_string,var,row,cloumn,row_data_target)
+    log.debug("MessageBaseVarToLua",type_string,var,row,cloumn,row_data)
     if type_string ~= nil then
         local find_type_is_string = string.find(type_string,"string")
         type_is_string = find_type_is_string ~= nil and find_type_is_string >0
@@ -368,13 +401,11 @@ function MessageBaseVarToLua(message_var,excel_template,row_data_target)
         local find_type_is_bool = string.find(type_string,"bool")
         type_is_bool = find_type_is_bool ~= nil and find_type_is_bool > 0
 
-        local row_data = row_data_target
-        if row_data == nil then
-            row_data = excel_template[row+2]
-        end
+        -- local row_data = row_data_target
+        -- if row_data == nil then
+        --     row_data = excel_template[row+2]
+        -- end
         
-        log.debug(excel_template,row_data)
-
         if row_data ~= nil then
             local var_value = row_data[cloumn]
             log.debug(cloumn,var_value)
@@ -434,62 +465,42 @@ function MessageBaseVarToLua(message_var,excel_template,row_data_target)
     end
 
     if #string_builder > 0 then
-        return TableConcatEx(string_builder)
+        return this.TableConcatEx(string_builder)
     else
         -- 继续处理map类型
-        return MessageMapVarToLua(message_var,excel_template,row_data)
+        return this.MessageMapVarToLua(message_var,row_data)
     end
 end
 
-local function ConfigToLuaTable(message_name,config_name,excel_template)
+function this.MessageMapVarToLua(message_var,row_data_target)
     local string_builder = {}
-    table.insert(string_builder,string.format("local %s={\n",config_name))
-
-    local message_template = GetMessageTemplate(excel_template,message_name)
-    if message_template ~= nil then
-        for i=1,#message_template.var_list do
-            -- #config 必然只有一个#var以及#type为一个自定义MessageType
-            local message_var_string = MessageVarToLua(message_template.var_list[i],excel_template)
-            if message_var_string ~= nil and #message_var_string > 0 then
-                table.insert(string_builder,message_var_string)
-            end
-        end
-    end
-    table.insert(string_builder,string.format("}\n return %s\n",config_name))
-    return table.concat(string_builder)
-end
-
-function MessageVarToLua(message_var,excel_template,row_data_target)
     local type = message_var.type
-    local type_is_base = false
-    for i=1, #var_base_type_list do
-        if type == var_base_type_list[i] then
-            type_is_base = true
-            break
-        else
-            local var_base_list_type = "repeated "..var_base_type_list[i]
-            if string.find(type,var_base_list_type) == 1 then
-                type_is_base = true
-                break
-            end
-        end
+    local var  = message_var.var
+    local row = message_var.row
+    local cloumn = message_var.cloumn
+    
+    local var_value = row_data_target[cloumn]
+    if var_value == nil then
+        var_value = ""
     end
 
-    local message_var_string = nil
-    if type_is_base then
-        message_var_string = MessageBaseVarToLua(message_var,excel_template,row_data_target)
-    else
-        message_var_string = MessageTypeVarToLua(message_var,excel_template)
+    table.insert(string_builder,"{")
+    for k, v in string.gmatch(var_value, "(%w+):(%w+)") do
+        table.insert(string_builder,string.format("%s=%s,",k,v))
     end
-    return message_var_string
+    table.insert(string_builder,"},")
+
+    return this.TableConcatEx(string_builder)
 end
 
-function ToLuaTable(excel_template)
-    local data_table = {}
-    for key, value in pairs(excel_template.excel_config) do
-        local lua_table = ConfigToLuaTable(key,value,excel_template)
-        data_table[key] = {name=value,data = lua_table}
-        log.debug(lua_table)
+function this.TableConcatEx(table_data)
+    local string_builder_result = table.concat(table_data)
+    local i,result_j = string.find(string_builder_result,",",-1)
+    if result_j == #string_builder_result then
+        string_builder_result = string.sub(string_builder_result,1,result_j-1)
     end
-    return data_table
+    return string_builder_result
 end
+---ToLuaTable [end]---
+
+return parse_excel_new
