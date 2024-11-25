@@ -393,7 +393,7 @@ function this.MessageBaseVarToLua(message_var,row_data)
         end
     end
 
-    log.debug("MessageBaseVarToLua",type_string,var,row,cloumn,row_data)
+    -- log.debug("MessageBaseVarToLua",type_string,var,row,cloumn,row_data)
     if type_string ~= nil then
         local find_type_is_string = string.find(type_string,"string")
         type_is_string = find_type_is_string ~= nil and find_type_is_string >0
@@ -408,9 +408,8 @@ function this.MessageBaseVarToLua(message_var,row_data)
         
         if row_data ~= nil then
             local var_value = row_data[cloumn]
-            log.debug(cloumn,var_value)
             -- 需要处理一下默认数据
-            if var_value== nil or #var==0 then
+            if var_value == nil or #var_value==0 then
                 if not is_list then
                     if type_is_string then
                         var_value = ""
@@ -421,6 +420,7 @@ function this.MessageBaseVarToLua(message_var,row_data)
                     end
                 end
             end
+            log.debug("MessageBaseVarToLua",type_string,var,row,cloumn,row_data,var_value)
             table.insert(string_builder,string.format("%s=",var))
             if is_list then
                 -- todo ..  

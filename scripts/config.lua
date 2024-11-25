@@ -50,12 +50,27 @@ local function out_cmd(cmd)
     return cmd_arg
 end
 
+local function target_cmd(cmd)
+    local cmd_index = string.find(cmd,"=")
+    if cmd_index == nil then
+        return nil
+    end
+
+    if cmd_index >= string.len(cmd) then
+        return nil
+    end
+
+    local cmd_arg = string.sub(cmd,cmd_index+1)
+    return cmd_arg
+end
+
 local arg_configs = {
     {key="help", cmd={"--help","-h"},desc="print this text",callback=help_cmd},
     {key="debug", cmd={"--debug","-d"},desc="output more debug logs",callback=help_cmd},
     {key="version", cmd={"--version","-v"},desc=VERSION,callback=help_cmd},
     {key="excel", cmd={"--excel","-e"},desc="excel dir",callback=excel_cmd},
     {key="out", cmd={"--out","-o"},desc="out dir",callback=out_cmd},
+    {key="target", cmd={"--target","-t"},desc="target",callback=target_cmd},
 }
 
 local function parse_help_text()
