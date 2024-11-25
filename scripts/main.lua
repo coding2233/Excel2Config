@@ -1,7 +1,7 @@
 require("config")
 require("excel_to_protobuf")
 require("lfs")
-local parse_excel_new = require("parse_excel_new")
+local parse_excel = require("parse_excel")
 
 log = require "log"
 log.level = "info"
@@ -10,15 +10,15 @@ log.level = "info"
 --执行目录
 local exec_dir = get_exe_dir()
 
-local function excel_to_protobuf_new(excel_file,excel_name,out_dir)
-    log.info(string.format("excel_to_protobuf_new\n excel: %s\n excel_name: %s\n out_dir: %s",excel_file,excel_name,out_dir))
+local function parse_excel_to_protobuf(excel_file,excel_name,out_dir)
+    log.info(string.format("parse_excel_to_protobuf\n excel: %s\n excel_name: %s\n out_dir: %s",excel_file,excel_name,out_dir))
     --加载excel
-    parse_excel_new.Load(excel_file)
+    parse_excel.Load(excel_file)
     -- proto
-    local proto,proto_package = parse_excel_new.ToProtobuf()
+    local proto,proto_package = parse_excel.ToProtobuf()
     local proto_parse = "syntax = \"proto3\";\n\n"..proto
     -- protobuf 
-    local proto_data_table = parse_excel_new.ToLuaTable()
+    local proto_data_table = parse_excel.ToLuaTable()
     for key, value in pairs(proto_data_table) do
         local value_name = value.name
         local value_data = value.data
@@ -74,7 +74,7 @@ local function find_excel(excel_dir,out_dir)
         if a ~= nil then
             excel_name = string.gsub(excel_file,".xlsx","")
             log.debug(excel_file,#excel_file,a,b,excel_name)
-            excel_to_protobuf_new(excel_dir.."/"..excel_file,excel_name,out_dir)
+            parse_excel_to_protobuf(excel_dir.."/"..excel_file,excel_name,out_dir)
         end
     end
 end

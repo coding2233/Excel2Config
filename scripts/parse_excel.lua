@@ -1,5 +1,5 @@
-local parse_excel_new = {}
-local this = parse_excel_new
+local parse_excel = {}
+local this = parse_excel
 
 --基础类型
 local var_base_type_list = {"int32","string","bool","float"}
@@ -503,4 +503,4 @@ function this.TableConcatEx(table_data)
 end
 ---ToLuaTable [end]---
 
-return parse_excel_new
+return parse_excel
