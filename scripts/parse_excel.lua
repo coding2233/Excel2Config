@@ -228,6 +228,7 @@ function this.ToLuaTable()
     for key, value in pairs(this.excel_config) do
         log.debug("ToLuaTable",key,value)
         local lua_table = this.ConfigToLuaTable(key,value)
+        lua_table = string.gsub(lua_table,",}","}")
         data_table[key] = {name=value,data = lua_table}
         log.debug(string.format("ToLuaTable\n%s\n%s\n%s\n",key,value,lua_table))
     end
