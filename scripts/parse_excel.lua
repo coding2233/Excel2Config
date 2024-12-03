@@ -211,7 +211,7 @@ function this.EnumToProtobuf(enum_template)
         if enum_value.desc ~= nil and #enum_value.desc > 0 then
             table.insert(string_builder, string.format("\t//%s\n",enum_value.desc))
         end
-        table.insert(string_builder, string.format("\t%s:%s;\n",enum_value.var,enum_value.value))
+        table.insert(string_builder, string.format("\t%s=%s;\n",enum_value.var,enum_value.value))
     end
     table.insert(string_builder, "}\n\n")
 
@@ -360,10 +360,12 @@ function this.MessageTypeVarToLua(message_var)
                     table.insert(textproto_string_builder,"{")
                     -- log.debug(#message_template.var_list)
                     for i=1,#message_template.var_list do
-                        local message_var_string = this.MessageVarToLua(message_template.var_list[i],find_row_data)
-                        if message_var_string ~= nil and #message_var_string > 0 then
-                            table.insert(json_string_builder,string.format("%s,",message_var_string))
-                            table.insert(textproto_string_builder,string.format("%s,",message_var_string))
+                        local json_message_var_string,textproto_message_var_string = this.MessageVarToLua(message_template.var_list[i],find_row_data)
+                        if json_message_var_string ~= nil and #json_message_var_string > 0 then
+                            table.insert(json_string_builder,string.format("%s,",json_message_var_string))
+                        end
+                        if textproto_message_var_string ~= nil and #textproto_message_var_string > 0 then
+                            table.insert(textproto_string_builder,string.format("%s,",textproto_message_var_string))
                         end
                     end
                     table.insert(json_string_builder,"},")
