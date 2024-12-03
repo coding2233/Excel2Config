@@ -14,11 +14,36 @@ local function parse_excel_to_protobuf(excel_file,excel_name,out_dir,target)
     --加载excel
     parse_excel.Load(excel_file)
     -- proto
-    local proto,proto_package = parse_excel.ToProtobuf()
+    local proto,proto_package,package_name = parse_excel.ToProtobuf()
     local proto_parse = "syntax = \"proto3\";\n\n"..proto
+     --保存proto文件
+     local proto_path = out_dir.."/"..excel_name..".proto"
+     local proto_content = "syntax = \"proto3\";\n\n"..proto_package..proto
+     local proto_file = io.open(proto_path,"w")
+     if proto_file ~= nil then
+         proto_file:write(proto_content)
+         proto_file:close()
+         log.info("lua proto write success. -> ",proto_path)
+     end
     -- protobuf 
     local proto_data_table = parse_excel.ToJson()
     for key, value in pairs(proto_data_table) do
+        local proto_type = key
+        if package_name ~= nil and #package_name > 0 then
+            proto_type = package_name.."."..proto_type
+        end
+        local textproto = string.gsub(value.textproto,"\"","\\\"")
+        local protoc_cmd_format = "echo \"%s\" | protoc --encode=%s %s"
+        local protoc_cmd = string.format(protoc_cmd_format,textproto,proto_type,proto_path)
+        log.info(protoc_cmd)
+        local pc = io.popen(protoc_cmd)
+        if pc ~= nil then
+             -- 读取命令的输出结果
+            local pc_result = pc:read("*a")
+            pc:close()
+            log.info(pc_result)
+        end
+       
         -- local value_name = value.name
         -- if target == nil or target == value_name  then
         --     local value_data = value.data
@@ -51,15 +76,7 @@ local function parse_excel_to_protobuf(excel_file,excel_name,out_dir,target)
         --     end
         -- end
     end
-    --保存proto文件
-    local proto_path = out_dir.."/"..excel_name..".proto"
-    local proto_content = "syntax = \"proto3\";\n\n"..proto_package..proto
-    local proto_file = io.open(proto_path,"w")
-    if proto_file ~= nil then
-        proto_file:write(proto_content)
-        proto_file:close()
-        log.info("lua proto write success. -> ",proto_path)
-    end
+   
 end
 
 local function find_excel(excel_dir,out_dir,target)

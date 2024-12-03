@@ -163,7 +163,7 @@ function this.ToProtobuf()
     --log.debug(#string_builder)
     local protobuf_string = table.concat(string_builder)
     log.debug("ToProtobuf\n",protobuf_string)
-    return protobuf_string, string_package
+    return protobuf_string, string_package,this.package
 end
 
 function this.MessageToProtobuf(message_template)
