@@ -516,6 +516,16 @@ function this.MessageMapVarToLua(message_var,row_data_target)
     local row = message_var.row
     local cloumn = message_var.cloumn
     
+    local key_type,value_type = string.match(type,"map<(%w+),(%w+)>")
+    local key_type_is_string = false
+    local value_type_is_string = false
+    if key_type == "string" then
+        key_type_is_string = true
+    end
+    if value_type == "string" then
+        value_type_is_string = true
+    end
+
     local var_value = row_data_target[cloumn]
     if var_value == nil then
         var_value = ""
@@ -524,9 +534,17 @@ function this.MessageMapVarToLua(message_var,row_data_target)
     table.insert(json_string_builder,string.format("\"%s\":{",var))
     -- todo...检查value string类型
     for k, v in string.gmatch(var_value, "(%w+):(%w+)") do
-        table.insert(json_string_builder,string.format("\"%s\":\"%s\",",k,v))
+        local value_string = v
+        if value_type_is_string then
+            value_string = string.format("\"%s\"",v)
+        end
+        table.insert(json_string_builder,string.format("\"%s\":%s,",k,value_string))
         table.insert(textproto_string_builder,string.format("%s:",var))
-        table.insert(textproto_string_builder,string.format("{key:\"%s\",value:\"%s\"},",k,v))
+        local key_string = k
+        if key_type_is_string then
+            key_string = string.format("\"%s\"",k)
+        end
+        table.insert(textproto_string_builder,string.format("{key:%s,value:%s},",key_string,value_string))
     end
     table.insert(json_string_builder,"},")
 
