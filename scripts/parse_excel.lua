@@ -233,7 +233,7 @@ function this.ToJson()
         config_textproto = string.gsub(config_textproto,",}","}")
         config_textproto = string.gsub(config_textproto,",]","]")
         data_table[key] = {name=value,json = config_json,textproto = config_textproto}
-        log.debug(string.format("ToLuaTable\n%s\n%s\n%s\n\n%s\n",key,value,config_json,config_textproto))
+        log.debug(string.format("\nToLuaTable\n\n%s\n\n%s\n\n%s\n\n%s\n",key,value,config_json,config_textproto))
     end
     return data_table
 end
@@ -280,6 +280,7 @@ function this.MessageVarToLua(message_var,row_data_target)
     log.debug("MessageVarToLua",message_var, message_var.type,row_data_target)
     local type = message_var.type
     local type_is_base = false
+    local type_is_map = false
     for i=1, #var_base_type_list do
         if type == var_base_type_list[i] then
             type_is_base = true
@@ -293,11 +294,19 @@ function this.MessageVarToLua(message_var,row_data_target)
         end
     end
 
+    if not type_is_base then
+        if string.find(type,"map<") ~= nil then
+            type_is_map = true
+        end
+    end
+
     log.debug("MessageVarToLua",type,type_is_base)
     local json_message_var_string = nil
     local textproto_message_var_string = nil
     if type_is_base then
         json_message_var_string,textproto_message_var_string = this.MessageBaseVarToLua(message_var,row_data_target)
+    elseif type_is_map then
+        json_message_var_string,textproto_message_var_string = this.MessageMapVarToLua(message_var,row_data_target)
     else
         json_message_var_string,textproto_message_var_string = this.MessageTypeVarToLua(message_var)
     end
@@ -496,13 +505,7 @@ function this.MessageBaseVarToLua(message_var,row_data)
         end
     end
 
-    if #json_string_builder > 0 then
-        return this.TableConcatEx(json_string_builder),this.TableConcatEx(textproto_string_builder)
-    else
-        -- 继续处理map类型
-        local json_value,textproto_value this.MessageMapVarToLua(message_var,row_data)
-        return json_value,textproto_value
-    end
+    return this.TableConcatEx(json_string_builder),this.TableConcatEx(textproto_string_builder)
 end
 
 function this.MessageMapVarToLua(message_var,row_data_target)
@@ -518,14 +521,12 @@ function this.MessageMapVarToLua(message_var,row_data_target)
         var_value = ""
     end
 
-    table.insert(json_string_builder,"{")
+    table.insert(json_string_builder,string.format("\"%s\":{",var))
     -- todo...检查value string类型
     for k, v in string.gmatch(var_value, "(%w+):(%w+)") do
-        table.insert(json_string_builder,string.format("\"%s\":%s,",k,v))
-        if #textproto_string_builder > 0 then
-            table.insert(textproto_string_builder,string.format("%s:,",var))
-        end
-        table.insert(textproto_string_builder,string.format("{key:%s\nvalue:%s},",k,v))
+        table.insert(json_string_builder,string.format("\"%s\":\"%s\",",k,v))
+        table.insert(textproto_string_builder,string.format("%s:",var))
+        table.insert(textproto_string_builder,string.format("{key:\"%s\",value:\"%s\"},",k,v))
     end
     table.insert(json_string_builder,"},")
 

@@ -5,31 +5,6 @@ add_repositories("my-repo my-repositories")
 add_requires("xlnt",{configs = {shared = false}})
 
 
-
-target("pb")
-    set_kind("shared")
-    add_files("lua-protobuf-master/pb.c")
-    add_packages("lua")
-    if is_plat("windows") then
-        add_defines("LUA_BUILD_AS_DLL")
-        -- add_defines("LUA_LIB")
-        -- add_rules("utils.symbols.export_all", {export_classes = true})
-    end
-    after_build(function (target) 
-        local build_full_dir = "$(buildir)/$(plat)/$(arch)/$(mode)/"
-        local target_name = target:name()
-        local target_file_name = target:filename()
-        local target_extension = path.extension(target_file_name)
-        local package_path = build_full_dir.."package/"
-        if not os.isdir(package_path) then 
-            os.mkdir(package_path)
-        end 
-        --移动pb到对应的package
-        os.mv(build_full_dir..target_file_name,package_path..target_name..target_extension)
-        --复制lua
-        os.cp("$(projectdir)/lua-protobuf-master/*.lua", package_path)
-    end)
-
 target("lfs")
     set_kind("shared")
     add_files("luafilesystem-master/src/*.c")
