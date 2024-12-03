@@ -17,39 +17,39 @@ local function parse_excel_to_protobuf(excel_file,excel_name,out_dir,target)
     local proto,proto_package = parse_excel.ToProtobuf()
     local proto_parse = "syntax = \"proto3\";\n\n"..proto
     -- protobuf 
-    local proto_data_table = parse_excel.ToLuaTable()
+    local proto_data_table = parse_excel.ToJson()
     for key, value in pairs(proto_data_table) do
-        local value_name = value.name
-        if target == nil or target == value_name  then
-            local value_data = value.data
-            -- log.debug("protobuf_encode",key,value_name,value_data)
-            -- 将protobuf lua table写入一个临时的lua文件
-            local rand_key = math.random(10000)
-            local time_key = os.time()
-            local data_temp_name = string.format("t_%s_%s_%s_%s",key,value_name,tostring(rand_key),tostring(time_key))
-            local data_path = exec_dir.."/package/"..data_temp_name..".lua"
-            local data_file = io.open(data_path,"w")
-            if data_file ~= nil then
-                data_file:write(value_data)
-                data_file:close()
-                log.debug("write succee->",key,value_name,data_path)
-            end
-            -- 读取protobuf的lua table
-            local data_table = require(data_temp_name)
-            log.info("lua table write success. -> ",data_path,data_table)
-            local excel_pb = require("excel_to_protobuf")
-            local bytes = excel_pb.ProtobufExcelEncode(proto_parse,key,data_table)
-            -- PBTest()
+        -- local value_name = value.name
+        -- if target == nil or target == value_name  then
+        --     local value_data = value.data
+        --     -- log.debug("protobuf_encode",key,value_name,value_data)
+        --     -- 将protobuf lua table写入一个临时的lua文件
+        --     local rand_key = math.random(10000)
+        --     local time_key = os.time()
+        --     local data_temp_name = string.format("t_%s_%s_%s_%s",key,value_name,tostring(rand_key),tostring(time_key))
+        --     local data_path = exec_dir.."/package/"..data_temp_name..".lua"
+        --     local data_file = io.open(data_path,"w")
+        --     if data_file ~= nil then
+        --         data_file:write(value_data)
+        --         data_file:close()
+        --         log.debug("write succee->",key,value_name,data_path)
+        --     end
+        --     -- 读取protobuf的lua table
+        --     local data_table = require(data_temp_name)
+        --     log.info("lua table write success. -> ",data_path,data_table)
+        --     local excel_pb = require("excel_to_protobuf")
+        --     local bytes = excel_pb.ProtobufExcelEncode(proto_parse,key,data_table)
+        --     -- PBTest()
 
-            -- 生成配置的二进制文件
-            local binary_path = out_dir.."/"..value_name..".bytes"
-            local binary_file = io.open(binary_path,"w")
-            if binary_file ~= nil then
-                binary_file:write(bytes)
-                binary_file:close()
-                log.info("lua protobuf binary write success. -> ",binary_path)
-            end
-        end
+        --     -- 生成配置的二进制文件
+        --     local binary_path = out_dir.."/"..value_name..".bytes"
+        --     local binary_file = io.open(binary_path,"w")
+        --     if binary_file ~= nil then
+        --         binary_file:write(bytes)
+        --         binary_file:close()
+        --         log.info("lua protobuf binary write success. -> ",binary_path)
+        --     end
+        -- end
     end
     --保存proto文件
     local proto_path = out_dir.."/"..excel_name..".proto"

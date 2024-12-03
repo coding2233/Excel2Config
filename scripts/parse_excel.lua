@@ -211,7 +211,7 @@ function this.EnumToProtobuf(enum_template)
         if enum_value.desc ~= nil and #enum_value.desc > 0 then
             table.insert(string_builder, string.format("\t//%s\n",enum_value.desc))
         end
-        table.insert(string_builder, string.format("\t%s=%s;\n",enum_value.var,enum_value.value))
+        table.insert(string_builder, string.format("\t%s:%s;\n",enum_value.var,enum_value.value))
     end
     table.insert(string_builder, "}\n\n")
 
@@ -221,38 +221,46 @@ end
 ---ToProtobuf [end]---
 
 
----ToLuaTable [start]---
+---ToJson [start]---
 
-function this.ToLuaTable()
+function this.ToJson()
     local data_table = {}
     for key, value in pairs(this.excel_config) do
         log.debug("ToLuaTable",key,value)
-        local lua_table = this.ConfigToLuaTable(key,value)
-        lua_table = string.gsub(lua_table,",}","}")
-        data_table[key] = {name=value,data = lua_table}
-        log.debug(string.format("ToLuaTable\n%s\n%s\n%s\n",key,value,lua_table))
+        local config_json,config_textproto = this.ConfigToJson(key,value)
+        config_json = string.gsub(config_json,",}","}")
+        config_json = string.gsub(config_json,",]","]")
+        config_textproto = string.gsub(config_textproto,",}","}")
+        config_textproto = string.gsub(config_textproto,",]","]")
+        data_table[key] = {name=value,json = config_json,textproto = config_textproto}
+        log.debug(string.format("ToLuaTable\n%s\n%s\n%s\n\n%s\n",key,value,config_json,config_textproto))
     end
     return data_table
 end
 
-function this.ConfigToLuaTable(message_name,config_name)
-    log.debug("ConfigToLuaTable",message_name,config_name)
-    local string_builder = {}
-    table.insert(string_builder,string.format("local %s={\n",config_name))
+function this.ConfigToJson(message_name,config_name)
+    log.debug("ConfigToJson",message_name,config_name)
+    local json_string_builder = {}
+    local textproto_string_builder = {}
+    table.insert(json_string_builder,string.format("{",config_name))
 
     local message_template = this.GetMessageTemplate(message_name)
     if message_template ~= nil then
         local row_data = message_template.sheet[message_template.row+4]
         for i=1,#message_template.var_list do
-            local message_var_string = this.MessageVarToLua(message_template.var_list[i],row_data)
-            if message_var_string ~= nil and #message_var_string > 0 then
-                table.insert(string_builder,message_var_string)
-                table.insert(string_builder,",")
+            local json_message_var_string,textproto_message_var_string = this.MessageVarToLua(message_template.var_list[i],row_data)
+            if json_message_var_string ~= nil and #json_message_var_string > 0 then
+                table.insert(json_string_builder,json_message_var_string)
+                table.insert(json_string_builder,",")
+            end
+            if textproto_message_var_string ~= nil and #textproto_message_var_string > 0 then
+                table.insert(textproto_string_builder,textproto_message_var_string)
+                table.insert(textproto_string_builder,",")
             end
         end
     end
-    table.insert(string_builder,string.format("}\n return %s\n",config_name))
-    return table.concat(string_builder)
+    table.insert(json_string_builder,string.format("}",config_name))
+    return table.concat(json_string_builder),table.concat(textproto_string_builder)
 end
 
 function this.GetMessageTemplate(message_name)
@@ -286,17 +294,19 @@ function this.MessageVarToLua(message_var,row_data_target)
     end
 
     log.debug("MessageVarToLua",type,type_is_base)
-    local message_var_string = nil
+    local json_message_var_string = nil
+    local textproto_message_var_string = nil
     if type_is_base then
-        message_var_string = this.MessageBaseVarToLua(message_var,row_data_target)
+        json_message_var_string,textproto_message_var_string = this.MessageBaseVarToLua(message_var,row_data_target)
     else
-        message_var_string = this.MessageTypeVarToLua(message_var)
+        json_message_var_string,textproto_message_var_string = this.MessageTypeVarToLua(message_var)
     end
-    return message_var_string
+    return json_message_var_string,textproto_message_var_string
 end
 
 function this.MessageTypeVarToLua(message_var)
-    local string_builder = {}
+    local json_string_builder = {}
+    local textproto_string_builder = {}
     local type = message_var.type
     local var  = message_var.var
     local row = message_var.row
@@ -319,7 +329,14 @@ function this.MessageTypeVarToLua(message_var)
         -- end
         local find_message_template_row = message_template.row
         log.debug( message_template.row,message_template.cloumn, message_template.type,message_template.sheet)
-        table.insert(string_builder,string.format("%s={",var))
+        local val_symbol_start = "{"
+        local val_symbol_end = "}"
+        if is_list then
+            val_symbol_start = "["
+            val_symbol_end = "]"
+        end
+        table.insert(json_string_builder,string.format("\"%s\":%s",var,val_symbol_start))
+        table.insert(textproto_string_builder,string.format("%s:%s",var,val_symbol_start))
         if is_list then
             local find_row_index = 4;
             while true do
@@ -339,15 +356,18 @@ function this.MessageTypeVarToLua(message_var)
                     if is_all_nil then
                         break
                     end
-                    table.insert(string_builder,"{")
+                    table.insert(json_string_builder,"{")
+                    table.insert(textproto_string_builder,"{")
                     -- log.debug(#message_template.var_list)
                     for i=1,#message_template.var_list do
                         local message_var_string = this.MessageVarToLua(message_template.var_list[i],find_row_data)
                         if message_var_string ~= nil and #message_var_string > 0 then
-                            table.insert(string_builder,string.format("%s,",message_var_string))
+                            table.insert(json_string_builder,string.format("%s,",message_var_string))
+                            table.insert(textproto_string_builder,string.format("%s,",message_var_string))
                         end
                     end
-                    table.insert(string_builder,"},")
+                    table.insert(json_string_builder,"},")
+                    table.insert(textproto_string_builder,"},")
                 else
                     -- 空行数据
                     break
@@ -361,18 +381,21 @@ function this.MessageTypeVarToLua(message_var)
             for i=1,#message_template.var_list do
                 local message_var_string = this.MessageVarToLua(message_template.var_list[i],find_row_data)
                 if message_var_string ~= nil and #message_var_string > 0 then
-                    table.insert(string_builder,message_var_string)
+                    table.insert(json_string_builder,message_var_string)
+                    table.insert(textproto_string_builder,message_var_string)
                 end
             end
         end
-        table.insert(string_builder,string.format("},",var))
+        table.insert(json_string_builder,string.format("%s,",val_symbol_end))
+        table.insert(textproto_string_builder,string.format("%s,",val_symbol_end))
     end
 
-    return this.TableConcatEx(string_builder)
+    return this.TableConcatEx(json_string_builder),this.TableConcatEx(textproto_string_builder)
 end
 
 function this.MessageBaseVarToLua(message_var,row_data)
-    local string_builder = {}
+    local json_string_builder = {}
+    local textproto_string_builder = {}
     local type = message_var.type
     local var  = message_var.var
     local row = message_var.row
@@ -423,13 +446,15 @@ function this.MessageBaseVarToLua(message_var,row_data)
                 end
             end
             log.debug("MessageBaseVarToLua",type_string,var,row,cloumn,row_data,var_value)
-            table.insert(string_builder,string.format("%s=",var))
+            table.insert(json_string_builder,string.format("\"%s\":",var))
+            table.insert(textproto_string_builder,string.format("%s:",var))
             if is_list then
                 -- todo ..  
                 -- e.g.
                 -- repeated int32#sep=,
                 local find_key = ","
-                table.insert(string_builder,"{")
+                table.insert(json_string_builder,"[")
+                table.insert(textproto_string_builder,"[")
                 local read_while= var_value ~= nil and string.len(var_value) > 0
                 local read_index = 1
                 while read_while do
@@ -449,10 +474,12 @@ function this.MessageBaseVarToLua(message_var,row_data)
                         sub = string.lower(sub)
                     end
 
-                    table.insert(string_builder,string.format(var_vale_format,sub))
+                    table.insert(json_string_builder,string.format(var_vale_format,sub))
+                    table.insert(textproto_string_builder,string.format(var_vale_format,sub))
                     read_index = find_index + 1
                 end
-                table.insert(string_builder,"},")
+                table.insert(json_string_builder,"],")
+                table.insert(textproto_string_builder,"],")
             else
                 local var_vale_format = "%s,"
                 if type_is_string then
@@ -461,21 +488,24 @@ function this.MessageBaseVarToLua(message_var,row_data)
                 if type_is_bool then
                     var_value = string.lower(var_value)
                 end
-                table.insert(string_builder,string.format(var_vale_format,var_value))
+                table.insert(json_string_builder,string.format(var_vale_format,var_value))
+                table.insert(textproto_string_builder,string.format(var_vale_format,var_value))
             end
         end
     end
 
-    if #string_builder > 0 then
-        return this.TableConcatEx(string_builder)
+    if #json_string_builder > 0 then
+        return this.TableConcatEx(json_string_builder),this.TableConcatEx(textproto_string_builder)
     else
         -- 继续处理map类型
-        return this.MessageMapVarToLua(message_var,row_data)
+        local json_value,textproto_value this.MessageMapVarToLua(message_var,row_data)
+        return json_value,textproto_value
     end
 end
 
 function this.MessageMapVarToLua(message_var,row_data_target)
-    local string_builder = {}
+    local json_string_builder = {}
+    local textproto_string_builder = {}
     local type = message_var.type
     local var  = message_var.var
     local row = message_var.row
@@ -486,13 +516,18 @@ function this.MessageMapVarToLua(message_var,row_data_target)
         var_value = ""
     end
 
-    table.insert(string_builder,"{")
+    table.insert(json_string_builder,"{")
+    -- todo...检查value string类型
     for k, v in string.gmatch(var_value, "(%w+):(%w+)") do
-        table.insert(string_builder,string.format("%s=%s,",k,v))
+        table.insert(json_string_builder,string.format("\"%s\":%s,",k,v))
+        if #textproto_string_builder > 0 then
+            table.insert(textproto_string_builder,string.format("%s:,",var))
+        end
+        table.insert(textproto_string_builder,string.format("{key:%s\nvalue:%s},",k,v))
     end
-    table.insert(string_builder,"},")
+    table.insert(json_string_builder,"},")
 
-    return this.TableConcatEx(string_builder)
+    return this.TableConcatEx(json_string_builder),this.TableConcatEx(textproto_string_builder)
 end
 
 function this.TableConcatEx(table_data)
