@@ -1,3 +1,4 @@
+utf8 = require("utf8")
 require("config")
 require("lfs")
 local parse_excel = require("parse_excel")
@@ -5,9 +6,23 @@ local parse_excel = require("parse_excel")
 log = require "log"
 log.level = "info"
 
+function Utf8ToUnicode(input_string)
+    local output = ""
+    local bytes = {utf8.codepoint(input_string, 1, -1)}
+    for i, codepoint in ipairs(bytes) do
+        log.debug(codepoint,i,bytes[i])
+        if codepoint > 127 or codepoint == 32 then
+            output = output .. string.format("\\u%04x", codepoint)
+        else
+            output = output ..string.char(bytes[i])
+        end
+    end
+    return output
+end
 
 --执行目录
 local exec_dir = get_exe_dir()
+local is_windows_plat = is_windows_plat()
 
 local function parse_excel_to_protobuf(excel_file,excel_name,out_dir,target)
     log.info(string.format("parse_excel_to_protobuf\n excel: %s\n excel_name: %s\n out_dir: %s",excel_file,excel_name,out_dir))
@@ -34,9 +49,14 @@ local function parse_excel_to_protobuf(excel_file,excel_name,out_dir,target)
             if package_name ~= nil and #package_name > 0 then
                 proto_type = package_name.."."..proto_type
             end
-            local textproto = string.gsub(value.textproto,"\"","\\\"")
+            local textproto = value.textproto
+            textproto = Utf8ToUnicode(textproto)
+            if not is_windows_plat then
+                textproto = string.gsub(textproto,"\"","\\\"")
+                textproto = string.format("\"%s\"",textproto)
+            end
             local binary_path = out_dir.."/"..config_name..".bytes"
-            local protoc_cmd_format = "echo \"%s\" | protoc --encode=%s %s > %s"
+            local protoc_cmd_format = "echo %s | protoc --encode=%s %s > %s"
             local protoc_cmd = string.format(protoc_cmd_format,textproto,proto_type,proto_path,binary_path)
             log.info(protoc_cmd)
             local pc = io.popen(protoc_cmd)

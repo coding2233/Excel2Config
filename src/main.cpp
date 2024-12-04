@@ -9,7 +9,7 @@ extern "C"
 
 #include <iostream>
 #include <xlnt/xlnt.hpp>
-#include "lua_system.h"
+#include <filesystem>
 
 namespace fs = std::filesystem;
 
@@ -19,6 +19,16 @@ static int get_exe_dir(lua_State* L)
 {
     // printf("get_exe_dir:%s\n",global_exe_dir);
     lua_pushstring(L, global_exe_dir);
+    return 1;
+} 
+
+static int is_windows_plat(lua_State* L)
+{
+    bool is_windows = false;
+    #ifdef _WIN32
+    is_windows = true;
+    #endif
+    lua_pushboolean(L,is_windows);
     return 1;
 } 
 
@@ -176,13 +186,13 @@ int main(int argc,char* args[])
     luaL_openlibs(L);
 
     lua_register(L,"get_exe_dir",get_exe_dir);
+    lua_register(L,"is_windows_plat",is_windows_plat);
 
     lua_register(L,"read_excel",read_excel);
     lua_register(L,"load_excel",load_excel);
     lua_register(L,"save_excel",save_excel);
     lua_register(L,"write_worksheet",save_excel);
 
-     luaopen_systemlib(L);
     // lua_register(L,"get_files",get_files);
 
     //设置args全局table
