@@ -4,7 +4,16 @@ local exe_dir = get_exe_dir();
 -- print(exe_dir)
 
 package.path = exe_dir.."/package/?.lua;"..package.path
-package.cpath = exe_dir.."/package/?.so;"..exe_dir.."/package/?.dylib;"..exe_dir.."/package/?.dll;"..package.cpath
+
+local os_name = os.getenv("OS")
+if os_name and os_name:lower():find("windows") then
+    print("Running on Windows")
+    package.cpath = exe_dir.."/package/?.dll;"..package.cpath
+elseif os_name and os_name:lower():find("linux") then
+    package.cpath = exe_dir.."/package/?.so;"..package.cpath
+else
+    package.cpath = exe_dir.."/package/?.dylib;"..package.cpath
+end
 
 -- print(package.path)
 -- print(package.cpath)
